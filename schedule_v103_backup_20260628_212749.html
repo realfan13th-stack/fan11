@@ -662,84 +662,14 @@ body {
 }
 
 @media (max-width:600px) {
-  /* -- Mobile body & global -- */
-  body {
-    background: var(--bg, #F5F5F7);
-  }
-  /* -- Mobile tab nav: compact cards style -- */
-  .tab-nav {
-    background: var(--card, #FFFFFF);
-    border-bottom: 0.5px solid rgba(0,0,0,0.06);
-    padding: 4px 12px;
-    gap: 2px;
-  }
-  .tab-btn {
-    padding: 8px 16px;
-    font-size: 14px;
-    border-radius: 20px;
-    color: var(--text, #69697C);
-  }
-  .tab-btn.active {
-    background: rgba(89,122,181,0.08);
-    color: var(--accent);
-    font-weight: 600;
-  }
-  .tab-btn::after { display: none; }
-  .tab-btn:active { transform: scale(0.96); opacity: 0.8; }
-  /* -- Mobile top bar: clean white iOS style -- */
-  .top-bar {
-    background: #FFFFFF;
-    color: #1D1D1F;
-    padding: 12px 16px;
-    gap: 10px;
-    border-bottom: 0.5px solid rgba(0,0,0,0.08);
-    box-shadow: none;
-  }
-  .title-edit {
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-  }
-  .title-edit:hover { background: rgba(0,0,0,0.04); }
-  .title-edit .edit-icon { opacity: 0.3; color: #86868B; }
-  .title-input {
-    font-size: 18px;
-    font-weight: 700;
-    background: #F5F5F7;
-    border: 1.5px solid rgba(0,0,0,0.12);
-    color: #1D1D1F;
-    padding: 4px 10px;
-    border-radius: 8px;
-    width: 160px;
-  }
-  .title-input:focus { border-color: var(--accent, #597AB5); }
-  .schedule-switch {
-    background: #F5F5F7;
-    border-radius: 8px;
-  }
-  .schedule-switch button {
-    color: #86868B;
-    font-size: 12px;
-    padding: 6px 12px;
-    border-radius: 7px;
-  }
-  .schedule-switch button.active {
-    background: #FFFFFF;
-    color: #1D1D1F;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  }
-  .schedule-switch button:hover { color: #1D1D1F; }
-
   .main-content { flex-direction:column; }
   .left-panel {
     width:100%; min-width:auto; border-right:none;
-    border-bottom:none; max-height:none; height:auto; overflow-y:visible;
-    padding:10px 12px;
+    border-bottom:1px solid var(--border); max-height:none; height:auto; overflow-y:visible;
+    padding:clamp(6px,1.5vw,12px);
     grid-template-columns:1fr 1fr;
     grid-auto-rows:auto; align-items:stretch;
-    gap:10px;
-    background: transparent;
-    box-shadow: none;
+    gap:8px;
   }
   .left-panel .clock-card {
     grid-column:1 / 2;
@@ -755,46 +685,24 @@ body {
     grid-column:1 / 2;
     grid-row:2;
     display:flex; flex-direction:row; justify-content:center; align-items:center;
-    gap:5px; text-align:center;
+    gap:clamp(3px,0.6vw,5px); text-align:center;
   }
   .left-panel .schedule-card {
     grid-column:1 / -1;
     grid-row:3;
-    margin-top:6px;
+    margin-top:clamp(3px,0.5vw,6px);
   }
-  .right-panel {
-    padding: 10px 12px;
-    position: relative;
-    overflow-x: hidden;
-  }
-  .clock-time { font-size:28px; }
-  .clock-date { font-size:12px; }
-  .overview-card {
-    padding:12px;
-    border-radius: 16px;
-    border: none;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
-  }
+  .right-panel { padding:clamp(8px,2vw,14px); }
+  .clock-time { font-size:clamp(26px,5vw,32px); }
+  .clock-date { font-size:clamp(12px,2.5vw,14px); }
+  .overview-card { padding:clamp(6px,1.2vw,10px); }
   .info-row { font-size:13px; padding:2px 0; }
   .info-row .accent { font-size:14px; }
   .info-label { font-size:11px; }
-  .cd-number { font-size:20px; }
-  .cd-label { font-size:10px; }
-  .cd-unit { font-size:10px; }
-  .class-grid-wrapper {
-    background: var(--card, #FFFFFF);
-    border-radius: 16px;
-    padding: 14px 12px;
-    margin-bottom: 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
-  }
-  .class-grid-wrapper h3 {
-    font-size: 17px;
-    font-weight: 700;
-    line-height: 1.3;
-    margin-bottom: 8px;
-    letter-spacing: -0.2px;
-  }
+  .cd-number { font-size:clamp(18px,4vw,24px); }
+  .cd-label { font-size:clamp(10px,2.2vw,12px); }
+  .cd-unit { font-size:clamp(10px,2vw,12px); }
+  .class-grid-wrapper h3 { font-size:18px; font-weight:600; line-height:1.3; }
   .class-grid th { font-size:12px; font-weight:600; line-height:1.2; padding:4px 2px; }
   .class-grid td { font-size:12px; font-weight:500; line-height:1.3; padding:3px 2px; height:42px; min-height:42px; }
   .class-grid td .course-class { font-size:10px; font-weight:400; line-height:1.3; }
@@ -815,6 +723,7 @@ body {
   .as-legend-item { font-size:11px; }
   .as-legend-days, .as-legend-days-total { font-size:10px; }
   /* 移动端按钮触摸区域增大 */
+  .tab-btn { padding:10px 14px; min-height:44px; }
   .dm-subtab { padding:8px 14px; min-height:40px; }
   .class-subtab { padding:8px 14px; min-height:40px; }
   .month-tab { padding:4px 10px; min-height:32px; font-size:12px; }
@@ -825,7 +734,7 @@ body {
   .schedule-switch button { min-height:36px; }
   .schedule-item { padding:6px clamp(8px,1vw,12px); }
   /* 移动端触摸反馈 */
-  .dm-subtab:active, .month-tab:active, .btn:active { opacity:0.6; transform:scale(0.97); }
+  .tab-btn:active, .dm-subtab:active, .month-tab:active, .btn:active { opacity:0.6; transform:scale(0.97); }
   /* 移动端日期选择框窄化 */
   #holidayNewFrom, #holidayNewTo { min-width:0 !important; width:80px; max-width:90px; padding:2px 3px; font-size:10px; height:26px; }
   [id^="hldFrom_"], [id^="hldTo_"] { min-width:0 !important; width:80px; max-width:90px; padding:2px 3px; font-size:11px; height:26px; }
@@ -3084,7 +2993,7 @@ function saveTeacherEdit(){
   });
   as.teachers.forEach(function(t,i){if(t.name!==oldNames[i]){Object.entries(appData.dayPlan||{}).forEach(function(e){var v=e[1];if(v&&v.type==="school"&&v.teacher===oldNames[i])v.teacher=t.name;});}});
   saveData();renderAfterSchool();updateTodayAfterSchool();
-  showImportStatus("教师信息已保存","success");
+  showImportStatus("✅ 教师信息已保存","success");
 }
 function addTeacher(){
   const as=appData.afterSchool;
@@ -3742,7 +3651,7 @@ function parseExcel(data){
     saveData();
     refreshAll();
     initDataManagement();
-    showImportStatus("已导入：" + messages.join("、") + "。空白单元格未清除原数据。","success");
+    showImportStatus("✅ 已导入：" + messages.join("、") + "。空白单元格未清除原数据。","success");
   }else{
     showImportStatus("未找到可导入的数据","error");
   }
@@ -4125,7 +4034,7 @@ function fillExampleData(){
     saveData();
     refreshAll();
     initDataManagement();
-    showImportStatus("已填入范例数据","success");
+    showImportStatus("✅ 已填入范例数据","success");
   });
 }
 function backupData(){
@@ -4996,7 +4905,7 @@ function getExportMonths(startDate,endDate){
       '          "box-shadow:0 4px 24px rgba(78,100,138,.1)}" +',
       '          "h2{margin:0 0 8px;font-size:20px}p{margin:0;color:#69697C;font-size:14px}" +',
       '          "</style></head><body><div class=card>" +',
-      '          "<h2>当前离线</h2><p>请连接网络后刷新页面</p></div></body></html>",',
+      '          "<h2>📋 当前离线</h2><p>请连接网络后刷新页面</p></div></body></html>",',
       '          { headers: { "Content-Type": "text/html; charset=utf-8" } }',
       '        );',
       '      });',
@@ -5096,7 +5005,7 @@ function getExportMonths(startDate,endDate){
     installBanner.id = 'pwa-install-banner';
     installBanner.innerHTML = [
       '<div style="display:flex;align-items:center;gap:10px;">',
-        '<span style="font-size:24px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>',
+        '<span style="font-size:24px;">📱</span>',
         '<div>',
           '<div style="font-weight:600;font-size:14px;">添加到主屏幕</div>',
           '<div style="font-size:12px;opacity:.8;">像App一样使用工作台</div>',
@@ -5190,59 +5099,40 @@ function getExportMonths(startDate,endDate){
   bottom: 0;
   left: 0;
   right: 0;
-  height: calc(60px + var(--safe-area-bottom));
+  height: calc(56px + var(--safe-area-bottom));
   padding-bottom: var(--safe-area-bottom);
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 0.5px solid rgba(0,0,0,0.08);
+  background: var(--card, #FFFFFF);
+  border-top: 1px solid var(--border, #E2E8F0);
   z-index: 99990;
   justify-content: space-around;
   align-items: center;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
 }
 .pwa-bottom-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   border: none;
   background: transparent;
-  color: #8E8E93;
+  color: var(--text, #69697C);
   font-size: 10px;
-  font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  padding: 4px 10px;
-  min-height: 48px;
-  min-width: 56px;
+  padding: 6px 12px;
+  min-height: 44px;
+  min-width: 48px;
   transition: color .2s, transform .15s;
   -webkit-tap-highlight-color: transparent;
-  position: relative;
 }
-.pwa-bottom-btn .pwa-bb-icon {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.pwa-bottom-btn .pwa-bb-icon svg {
-  width: 24px;
-  height: 24px;
-  display: block;
-}
-.pwa-bottom-btn.active {
-  color: var(--accent, #597AB5);
-}
-.pwa-bottom-btn:active {
-  transform: scale(0.9);
-  opacity: 0.7;
-}
+.pwa-bottom-btn .pwa-bb-icon { font-size: 22px; line-height: 1; }
+.pwa-bottom-btn.active { color: var(--accent, #597AB5); }
+.pwa-bottom-btn:active { transform: scale(0.92); }
 
 @media (max-width: 768px) {
   .pwa-bottom-bar { display: flex; }
-  body { padding-bottom: calc(68px + var(--safe-area-bottom)); }
+  body { padding-bottom: calc(64px + var(--safe-area-bottom)); }
 }
 
 /* ── P2.3: Pull-to-refresh indicator ── */
@@ -5258,70 +5148,12 @@ function getExportMonths(startDate,endDate){
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
 }
-
-/* ── Mobile Interactions: smooth transitions & touch feedback ── */
-@media (max-width: 768px) {
-  /* Tab content fade transition */
-  .right-panel .tab-content {
-    display: block !important;
-    opacity: 0;
-    visibility: hidden;
-    position: absolute;
-    width: 100%;
-    pointer-events: none;
-    transition: opacity .25s ease, visibility 0s .25s;
-  }
-  .right-panel .tab-content.active {
-    opacity: 1;
-    visibility: visible;
-    position: relative;
-    pointer-events: auto;
-    transition: opacity .25s ease, visibility 0s 0s;
-  }
-  /* Card press feedback */
-  .overview-card:active,
-  .class-grid-wrapper:active {
-    transform: scale(0.985);
-    transition: transform .12s ease;
-  }
-  /* General button press */
-  button:active:not(.pwa-bottom-btn):not(.tab-btn) {
-    opacity: 0.7;
-    transform: scale(0.97);
-    transition: all .1s ease;
-  }
-  /* Modal backdrop */
-  .ss-modal-overlay {
-    animation: fadeIn .2s ease;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  .ss-modal {
-    animation: slideUp .3s ease;
-  }
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px) scale(0.96); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  /* Pull to refresh smooth */
-  .pwa-ptr-indicator {
-    transition: max-height .3s ease, opacity .3s ease;
-  }
-}
 </style>
 <script>
 (function initMobileUX() {
   'use strict';
   var TAB_ORDER = ['class', 'afterschool', 'data', 'theme'];
-  // Lucide-style SVG icons (no emoji, no CDN dependency)
-  var TAB_ICONS = {
-    'class': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-    'afterschool': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
-    'data': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
-    'theme': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2"/><circle cx="17.5" cy="9.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12" r="1.5"/><circle cx="12.5" cy="14.5" r="1.5"/><circle cx="15.5" cy="15" r="2"/><path d="M6.5 17.5l-3 7h17l-3-7"/></svg>'
-  };
+  var TAB_ICONS = { 'class': '📅', 'afterschool': '🌙', 'data': '⚙️', 'theme': '🎨' };
   var TAB_LABELS = { 'class': '课表', 'afterschool': '晚托', 'data': '数据', 'theme': '主题' };
   var barEl = null;
   var swipeStartX = 0, swipeStartY = 0;
@@ -5421,7 +5253,7 @@ function getExportMonths(startDate,endDate){
       if (!ptrActive) return;
       ptrActive = false;
       if (ptrEl.style.display === 'block') {
-        ptrEl.textContent = '刷新中...';
+        ptrEl.textContent = '🔄 刷新中...';
         hapticTap();
         setTimeout(function() {
           ptrEl.style.display = 'none';
@@ -5525,7 +5357,7 @@ function getExportMonths(startDate,endDate){
     showNotifyToast('🔔 开启上课提醒？', [
       { text: '开启', action: function() {
         Notification.requestPermission().then(function(perm) {
-          if (perm === 'granted') { notifyEnabled = true; savePrefs(); showNotifyToast('已开启上课提醒', null); }
+          if (perm === 'granted') { notifyEnabled = true; savePrefs(); showNotifyToast('✅ 已开启上课提醒', null); }
           else { notifyEnabled = false; savePrefs(); }
         });
       }},
@@ -5634,9 +5466,9 @@ function getExportMonths(startDate,endDate){
       if (document.visibilityState === 'hidden' || document.hidden) {
         // Page in background — use Notification
         try {
-          new Notification('上课提醒', {
+          new Notification('🔔 上课提醒', {
             body: upcomingItem.name + ' 将在 ' + notifyAdvanceMin + ' 分钟后开始 (' + upcomingItem.start + ')',
-            icon: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#4E648A"/><path d="M50 22a4 4 0 0 0-4 4v4c-8.84 0-16 7.16-16 16v10l-4 8h48l-4-8V46c0-8.84-7.16-16-16-16v-4a4 4 0 0 0-4-4z" fill="white"/><path d="M58 74a8 8 0 1 1-16 0" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>'),
+            icon: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#4E648A"/><text x="50" y="62" text-anchor="middle" fill="white" font-size="40" font-weight="bold">🔔</text></svg>'),
             tag: 'class-reminder',
             requireInteraction: false,
             silent: false
@@ -5657,7 +5489,7 @@ function getExportMonths(startDate,endDate){
     if (!notifyEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
     try {
       var label = type === 'summer' ? '夏令时' : '冬令时';
-      new Notification('作息切换', {
+      new Notification('⏰ 作息切换', {
         body: '已切换至 ' + label + ' 作息表',
         tag: 'schedule-change',
         requireInteraction: false
