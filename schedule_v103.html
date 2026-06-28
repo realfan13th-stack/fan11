@@ -127,52 +127,23 @@ body {
    顶部导航
    ============================================================ */
 .top-bar {
-  background:var(--header); color:#fff; padding:10px clamp(8px,2vw,24px);
+  background:#FFFFFF; color:#1D1D1F; padding:10px clamp(8px,2vw,24px);
   display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  border-bottom:0.5px solid rgba(0,0,0,0.08);
 }
 .title-edit {
   font-size:clamp(14px,2vw,20px); font-weight:700; cursor:pointer;
   padding:4px 8px; border-radius:6px; user-select:none;
   display:flex; align-items:center; gap:6px;
 }
-.title-edit:hover { background:rgba(255,255,255,0.12); }
+.title-edit:hover { background:rgba(0,0,0,0.06); }
 .title-edit .edit-icon { font-size:clamp(10px,1.2vw,14px); opacity:0.5; }
 .title-input {
   font-size:clamp(14px,2vw,20px); font-weight:700;
-  background:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.4);
-  color:#fff; padding:4px 10px; border-radius:6px; outline:none; width:clamp(160px,30vw,280px);
+  background:#F5F5F7; border:2px solid rgba(0,0,0,0.15);
+  color:#1D1D1F; padding:4px 10px; border-radius:6px; outline:none; width:clamp(160px,30vw,280px);
 }
-.title-input:focus { border-color:#fff; }
-.schedule-switch { display:flex; background:rgba(255,255,255,0.12); border-radius:6px; overflow:hidden; }
-.schedule-switch button {
-  padding:5px clamp(10px,2vw,16px); border:none; background:transparent;
-  color:rgba(255,255,255,0.65); font-size:clamp(11px,1.3vw,14px);
-  cursor:pointer; font-weight:500; transition:0.25s; white-space:nowrap;
-}
-.schedule-switch button.active { background:rgba(255,255,255,0.22); color:#fff; }
-.schedule-switch button:hover { color:#fff; }
-
-/* ============================================================
-   Tab 导航
-   ============================================================ */
-.tab-nav {
-  display:flex; background:var(--card); border-bottom:1px solid var(--border);
-  padding:0 clamp(8px,2vw,24px); overflow-x:auto; -webkit-overflow-scrolling:touch;
-}
-.tab-nav::-webkit-scrollbar { display:none; }
-.tab-btn {
-  padding:clamp(8px,1.2vw,12px) clamp(12px,2vw,24px); border:none;
-  background:transparent; font-size:clamp(12px,1.3vw,15px); font-weight:500;
-  color:var(--text); cursor:pointer; opacity:0.5; transition:0.25s;
-  position:relative; white-space:nowrap; flex-shrink:0;
-}
-.tab-btn::after {
-  content:''; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%);
-  width:0; height:2px; background:var(--accent); border-radius:2px; transition:0.3s;
-}
-.tab-btn.active { opacity:1; color:var(--accent); }
-.tab-btn.active::after { width:50%; }
-.tab-btn:hover { opacity:0.85; }
+.title-input:focus { border-color:var(--accent); }
 
 /* ============================================================
    主内容区
@@ -414,15 +385,33 @@ body {
   transition:0.2s; white-space:nowrap;
 }
 .semester-edit-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
-.month-tabs { display:flex; gap:4px; flex-wrap:wrap; }
-.month-tab {
-  padding:clamp(4px,0.5vw,7px) clamp(10px,1.5vw,20px);
-  border:1.5px solid var(--border); background:var(--card); border-radius:6px;
-  cursor:pointer; font-weight:500; font-size:clamp(11px,1.2vw,14px);
-  color:var(--text); transition:0.25s; white-space:nowrap;
+/* 晚托月份选择 —— 横向长条滚动设计，与数据TAB风格统一 */
+.month-tabs {
+  display:flex; gap:0; flex-wrap:nowrap; overflow-x:auto;
+  background:var(--card); border-bottom:1px solid var(--border);
+  border-radius:10px 10px 0 0;
+  scrollbar-width:none; -ms-overflow-style:none;
+  -webkit-overflow-scrolling:touch;
 }
-.month-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
-.month-tab:hover:not(.active) { border-color:var(--accent); }
+.month-tabs::-webkit-scrollbar { display:none; }
+.month-tab {
+  flex:0 0 auto;
+  padding:clamp(8px,1vw,11px) clamp(14px,2vw,22px);
+  border:none; background:transparent; border-radius:0;
+  cursor:pointer; font-weight:500; font-size:clamp(12px,1.3vw,14px);
+  color:#86868B; transition:0.25s ease; white-space:nowrap;
+  position:relative; -webkit-tap-highlight-color:transparent;
+}
+.month-tab::after {
+  content:''; position:absolute; bottom:0; left:50%;
+  transform:translateX(-50%); width:0; height:2.5px;
+  background:var(--accent); border-radius:2px; transition:width 0.25s ease;
+}
+.month-tab.active {
+  background:transparent; color:#1D1D1F; font-weight:600;
+}
+.month-tab.active::after { width:50%; }
+.month-tab:hover:not(.active) { color:#1D1D1F; background:rgba(0,0,0,0.03); }
 .as-legend { display:flex; gap:clamp(8px,1.2vw,14px); flex-wrap:wrap; align-items:center; margin-bottom:clamp(6px,0.8vw,10px); }
 .as-legend-item { display:flex; align-items:center; gap:4px; font-size:clamp(10px,1.1vw,13px); }
 .as-legend-color { width:clamp(10px,1.2vw,14px); height:clamp(10px,1.2vw,14px); border-radius:3px; flex-shrink:0; }
@@ -587,29 +576,78 @@ body {
   border:none; padding:2px; width:32px; height:28px; cursor:pointer; border-radius:3px;
 }
 
-/* 数据管理子tab */
-.dm-subtabs { display:flex; gap:4px; margin-bottom:clamp(8px,1vw,12px); flex-wrap:wrap; }
-.dm-subtab {
-  padding:clamp(5px,0.6vw,8px) clamp(12px,1.5vw,18px);
-  border:1px solid var(--border); background:var(--card); border-radius:6px;
-  cursor:pointer; font-size:clamp(11px,1.1vw,13px); font-weight:500;
-  color:var(--text); transition:0.2s; opacity:0.6; white-space:nowrap;
+/* 数据管理子tab —— 横向长条样式 */
+.dm-subtabs {
+  display:flex; gap:0; margin-bottom:0;
+  background:var(--card); border-bottom:1px solid var(--border);
+  border-radius:12px 12px 0 0; overflow:hidden;
 }
-.dm-subtab.active { opacity:1; background:var(--accent); color:#fff; border-color:var(--accent); }
-.dm-subtab:hover:not(.active) { border-color:var(--accent); }
+.dm-subtab {
+  flex:1;
+  padding:clamp(12px,1.5vw,16px) clamp(8px,1.5vw,16px);
+  border:none; background:transparent; border-radius:0;
+  cursor:pointer; font-size:clamp(13px,1.4vw,15px); font-weight:500;
+  color:#86868B; transition:0.2s ease; white-space:nowrap;
+  text-align:center; position:relative;
+  -webkit-tap-highlight-color:transparent;
+}
+.dm-subtab::after {
+  content:''; position:absolute; bottom:0; left:50%;
+  transform:translateX(-50%); width:0; height:2.5px;
+  background:var(--accent); border-radius:2px; transition:width 0.25s ease;
+}
+.dm-subtab.active {
+  opacity:1; background:transparent; color:#1D1D1F;
+  font-weight:600; border-color:transparent;
+}
+.dm-subtab.active::after { width:60%; }
+.dm-subtab:hover:not(.active) { color:#1D1D1F; background:rgba(0,0,0,0.03); }
 .dm-panel { display:none; }
 .dm-panel.active { display:block; }
 
-/* 课表子tab */
-.class-subtabs { display:flex; gap:4px; margin-bottom:clamp(8px,1vw,14px); flex-wrap:wrap; }
-.class-subtab {
-  padding:clamp(5px,0.6vw,8px) clamp(12px,1.5vw,18px);
-  border:1px solid var(--border); background:var(--card); border-radius:6px;
-  cursor:pointer; font-size:clamp(11px,1.1vw,13px); font-weight:500;
-  color:var(--text); transition:0.2s; opacity:0.6; white-space:nowrap;
+/* DM 作息表 冬夏令时切换开关 —— 分段胶囊 */
+.season-toggle {
+  display:inline-flex; background:#F5F5F7; border-radius:10px;
+  overflow:hidden; border:1px solid var(--border);
 }
-.class-subtab.active { opacity:1; background:var(--accent); color:#fff; border-color:var(--accent); }
-.class-subtab:hover:not(.active) { border-color:var(--accent); }
+.season-toggle button {
+  padding:6px clamp(14px,2vw,24px); border:none; background:transparent;
+  color:#86868B; font-size:clamp(12px,1.1vw,14px); font-weight:500;
+  cursor:pointer; transition:0.2s ease; white-space:nowrap;
+  font-family:inherit; border-radius:9px; -webkit-tap-highlight-color:transparent;
+}
+.season-toggle button.active {
+  background:var(--accent); color:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,0.12);
+}
+.season-toggle button:hover:not(.active) { color:#1D1D1F; }
+
+/* 课表子tab —— 横向长条样式，与 DM 子 tab 一致 */
+.class-subtabs {
+  display:flex; gap:0; margin-bottom:clamp(10px,1.2vw,16px);
+  background:var(--card); border-bottom:1px solid var(--border);
+  border-radius:12px 12px 0 0; overflow:hidden;
+}
+.class-subtab {
+  flex:1;
+  padding:clamp(12px,1.5vw,16px) clamp(8px,1.5vw,16px);
+  border:none; background:transparent; border-radius:0;
+  cursor:pointer; font-size:clamp(13px,1.4vw,15px); font-weight:500;
+  color:#86868B; transition:0.2s ease; white-space:nowrap;
+  text-align:center; position:relative; opacity:1;
+  -webkit-tap-highlight-color:transparent;
+}
+.class-subtab::after {
+  content:''; position:absolute; bottom:0; left:50%;
+  transform:translateX(-50%); width:0; height:2.5px;
+  background:var(--accent); border-radius:2px; transition:width 0.25s ease;
+}
+.class-subtab.active {
+  background:transparent; color:#1D1D1F;
+  font-weight:600; border-color:transparent;
+}
+.class-subtab.active::after { width:60%; }
+.class-subtab:hover:not(.active) { color:#1D1D1F; background:rgba(0,0,0,0.03); }
 .class-subpanel { display:none; }
 .class-subpanel.active { display:block; }
 
@@ -666,16 +704,10 @@ body {
   body {
     background: var(--bg, #F5F5F7);
   }
-  /* -- Mobile tab nav: hidden (replaced by bottom floating capsule) -- */
-  .tab-nav { display: none; }
-  /* -- Mobile top bar: clean white iOS style -- */
+  /* -- Mobile top bar tweaks -- */
   .top-bar {
-    background: #FFFFFF;
-    color: #1D1D1F;
     padding: 12px 16px;
     gap: 10px;
-    border-bottom: 0.5px solid rgba(0,0,0,0.08);
-    box-shadow: none;
   }
   .title-edit {
     font-size: 18px;
@@ -695,22 +727,6 @@ body {
     width: 160px;
   }
   .title-input:focus { border-color: var(--accent, #597AB5); }
-  .schedule-switch {
-    background: #F5F5F7;
-    border-radius: 8px;
-  }
-  .schedule-switch button {
-    color: #86868B;
-    font-size: 12px;
-    padding: 6px 12px;
-    border-radius: 7px;
-  }
-  .schedule-switch button.active {
-    background: #FFFFFF;
-    color: #1D1D1F;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  }
-  .schedule-switch button:hover { color: #1D1D1F; }
 
   .main-content { flex-direction:column; }
   .left-panel {
@@ -797,17 +813,22 @@ body {
   .as-legend-item { font-size:11px; }
   .as-legend-days, .as-legend-days-total { font-size:10px; }
   /* 移动端按钮触摸区域增大 */
-  .dm-subtab { padding:8px 14px; min-height:40px; }
-  .class-subtab { padding:8px 14px; min-height:40px; }
-  .month-tab { padding:4px 10px; min-height:32px; font-size:12px; }
+  .dm-subtab { padding:12px 10px; min-height:44px; }
+  .dm-subtab:active { opacity:0.6; }
+  .class-subtab { padding:12px 8px; min-height:44px; }
+  .class-subtab:active { opacity:0.6; }
+  .month-tab { padding:8px 12px; min-height:38px; font-size:12px; }
+  .month-tab:active { opacity:0.6; }
   .data-mgmt .btn { padding:6px 14px; min-height:36px; }
   /* 行内小按钮保持紧凑 */
   .edit-table .btn { padding:2px 8px !important; min-height:auto !important; font-size:11px !important; }
   .holiday-row .btn { padding:2px 8px !important; min-height:auto !important; font-size:11px !important; }
-  .schedule-switch button { min-height:36px; }
+
   .schedule-item { padding:6px clamp(8px,1vw,12px); }
   /* 移动端触摸反馈 */
   .dm-subtab:active, .month-tab:active, .btn:active { opacity:0.6; transform:scale(0.97); }
+  .season-toggle button { padding:8px 16px; min-height:38px; }
+  .season-toggle button:active { opacity:0.6; }
   /* 移动端日期选择框窄化 */
   #holidayNewFrom, #holidayNewTo { min-width:0 !important; width:80px; max-width:90px; padding:2px 3px; font-size:10px; height:26px; }
   [id^="hldFrom_"], [id^="hldTo_"] { min-width:0 !important; width:80px; max-width:90px; padding:2px 3px; font-size:11px; height:26px; }
@@ -1254,18 +1275,8 @@ body {
            onkeydown="if(event.key==='Enter')saveTitle();if(event.key==='Escape')cancelTitleEdit();">
   </div>
 
-  <div class="schedule-switch">
-    <button class="active" data-type="summer" onclick="setScheduleType('summer')">夏令时</button>
-    <button data-type="winter" onclick="setScheduleType('winter')">冬令时</button>
-  </div>
-</header>
 
-<!-- ==================== Tab ==================== -->
-<nav class="tab-nav">
-  <button class="tab-btn active" data-tab="class" onclick="switchTab('class')">课表</button>
-  <button class="tab-btn" data-tab="afterschool" onclick="switchTab('afterschool')">晚托</button>
-  <button class="tab-btn" data-tab="data" onclick="switchTab('data')">数据管理</button>
-</nav>
+</header>
 
 <!-- ==================== 主内容 ==================== -->
 <div class="main-content">
@@ -1431,10 +1442,12 @@ body {
               <span class="export-title-hint">点击修改导出图片标题</span>
             </div>
             <hr class="divider">
-            <div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;">
-              <button class="btn btn-secondary" onclick="switchEditSchedule('summer')">编辑夏令时</button>
-              <button class="btn btn-secondary" onclick="switchEditSchedule('winter')">编辑冬令时</button>
-              <span id="editScheduleLabel" style="font-size:clamp(11px,1.1vw,13px);color:var(--accent);align-self:center;"></span>
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <div class="season-toggle">
+                <button class="active" data-season="summer" onclick="switchEditSchedule('summer')">夏令时</button>
+                <button data-season="winter" onclick="switchEditSchedule('winter')">冬令时</button>
+              </div>
+              <span id="editScheduleLabel" style="font-size:clamp(11px,1vw,12px);color:#86868B;"></span>
             </div>
             <div style="overflow-x:auto;">
               <table class="edit-table" id="scheduleEditTable">
@@ -1703,7 +1716,7 @@ const DEFAULT_DATA = {
 };
 
 const DEFAULT_THEMES = {
-  "\u4ef0\u671b\u660e\u6708":{bg:"#F9FCF6",header:"#4E648A",accent:"#597AB5",highlight:"#F8C899",text:"#69697C"},
+  "\u4ef0\u671b\u660e\u6708":{bg:"#F5F5F5",header:"#4E648A",accent:"#597AB5",highlight:"#F8C899",text:"#69697C"},
   "\u51ac\u5929\u7684\u4e0b\u5348":{bg:"#D9DFF3",header:"#506693",accent:"#7E8DBB",highlight:"#A4B0D5",text:"#506693"},
 };
 
@@ -1954,7 +1967,6 @@ function switchClassTab(tab){
 var currentClassTab="personal";
 function setScheduleType(type){
   currentScheduleType=type;editScheduleMode=type;
-  document.querySelectorAll(".schedule-switch button").forEach(b=>b.classList.toggle("active",b.dataset.type===type));
   renderClassSchedule();renderSchedule();updateMainStatus();saveData();
 }
 function toggleSchedule(){
@@ -1993,10 +2005,14 @@ function renderSchedule(){
 // ============================================================
 // 6. Schedule Editing
 // ============================================================
-function switchEditSchedule(m){editScheduleMode=m;renderScheduleEdit();}
+function switchEditSchedule(m){
+  editScheduleMode=m;
+  document.querySelectorAll(".season-toggle button").forEach(b=>b.classList.toggle("active",b.dataset.season===m));
+  renderScheduleEdit();
+}
 function renderScheduleEdit(){
   const label=document.getElementById("editScheduleLabel");
-  label.textContent="\u5f53\u524d\uff1a"+(editScheduleMode==="summer"?"\u590f\u4ee4\u65f6":"\u51ac\u4ee4\u65f6");
+  label.textContent=(editScheduleMode==="summer"?"\u590f\u4ee4\u65f6":"\u51ac\u4ee4\u65f6");
   const s=appData.schedules[editScheduleMode];
   if(!s||!s.sections){document.getElementById("scheduleEditBody").innerHTML="";return;}
   let html="";
@@ -4162,7 +4178,6 @@ function refreshAll(){
   applyTheme(currentTheme);renderClassSchedule();renderClassGroupSchedule();renderSchedule();
   renderAfterSchool();renderThemeSelector();updateMainStatus();
   try{renderSubstitutions();renderSwaps();updateDotIndicators();}catch(e){}
-  document.querySelectorAll(".schedule-switch button").forEach(b=>b.classList.toggle("active",b.dataset.type===currentScheduleType));
   if(appData.platformTitle)document.getElementById("titleText").textContent=appData.platformTitle;
 }
 
@@ -4312,7 +4327,6 @@ function init(){
   if(!appData)try{loadData();}catch(e){console.error("loadData",e);appData=JSON.parse(JSON.stringify(DEFAULT_DATA));}
   if(!appData){console.error("Failed to initialize appData");return;}
   try{applyTheme(currentTheme);}catch(e){}
-  try{document.querySelectorAll(".schedule-switch button").forEach(b=>b.classList.toggle("active",b.dataset.type===currentScheduleType));}catch(e){}
   try{if(appData.platformTitle){var tt=document.getElementById("titleText");if(tt)tt.textContent=appData.platformTitle;}}catch(e){}
   try{renderClassSchedule();}catch(e){console.error("renderClassSchedule",e);}
   try{renderSchedule();}catch(e){console.error("renderSchedule",e);}
@@ -5183,18 +5197,17 @@ function getExportMonths(startDate,endDate){
   --safe-area-right: env(safe-area-inset-right, 0px);
 }
 
-/* ── P2.1: Bottom Tab Bar (mobile only) ── Floating Capsule ── */
+/* ── P2.1: Bottom Tab Bar (mobile only) ── Stretched Pill ── */
 .pwa-bottom-bar {
   display: none;
   position: fixed;
   bottom: calc(12px + var(--safe-area-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  width: auto;
-  max-width: calc(100vw - 32px);
+  left: 16px;
+  right: 16px;
+  width: calc(100vw - 32px);
   height: 56px;
-  padding: 4px;
-  background: rgba(255,255,255,0.85);
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.92);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-radius: 32px;
@@ -5202,7 +5215,7 @@ function getExportMonths(startDate,endDate){
   z-index: 99990;
   justify-content: space-evenly;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
 }
 .pwa-bottom-btn {
   display: flex;
@@ -5217,32 +5230,32 @@ function getExportMonths(startDate,endDate){
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  padding: 6px 14px;
+  padding: 2px 12px;
   min-height: 44px;
-  min-width: 48px;
+  min-width: 52px;
   border-radius: 24px;
   transition: all .25s cubic-bezier(.4,0,.2,1);
   -webkit-tap-highlight-color: transparent;
   position: relative;
 }
 .pwa-bottom-btn .pwa-bb-icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform .25s cubic-bezier(.4,0,.2,1);
 }
 .pwa-bottom-btn .pwa-bb-icon svg {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: block;
 }
 .pwa-bottom-btn.active {
   color: #fff;
   background: var(--accent, #597AB5);
   box-shadow: 0 2px 8px rgba(89,122,181,0.35);
-  padding: 6px 16px;
+  padding: 4px 28px;
   font-weight: 600;
 }
 .pwa-bottom-btn.active .pwa-bb-icon {
@@ -5352,7 +5365,7 @@ function getExportMonths(startDate,endDate){
       btn.innerHTML = '<span class="pwa-bb-icon">' + TAB_ICONS[tab] + '</span><span>' + TAB_LABELS[tab] + '</span>';
       btn.addEventListener('click', function() {
         hapticTap();
-        if (typeof switchTab === 'function') switchTab(tab);
+        if (typeof window.switchTab === 'function') window.switchTab(tab);
       });
       barEl.appendChild(btn);
     });
@@ -5363,15 +5376,19 @@ function getExportMonths(startDate,endDate){
   function syncBottomBar() {
     if (!barEl) return;
     barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn) {
-      btn.classList.toggle('active', btn.dataset.pwaTab === (window.currentTab || 'home'));
+      btn.classList.toggle('active', btn.dataset.pwaTab === (currentTab || 'home'));
     });
   }
 
   // Hook into existing switchTab to sync bottom bar
   var origSwitchTab = window.switchTab;
   window.switchTab = function(tab) {
-    if (origSwitchTab) origSwitchTab(tab);
-    syncBottomBar();
+    try {
+      if (origSwitchTab) origSwitchTab(tab);
+    } finally {
+      // Always sync, even if switchTab throws an error
+      syncBottomBar();
+    }
   };
 
   // ── P2.2: Swipe Navigation ──
@@ -5398,11 +5415,11 @@ function getExportMonths(startDate,endDate){
     if (dx < 0 && curIdx < TAB_ORDER.length - 1) {
       // Swipe left → next tab
       hapticTap();
-      if (typeof switchTab === 'function') switchTab(TAB_ORDER[curIdx + 1]);
+      if (typeof window.switchTab === 'function') window.switchTab(TAB_ORDER[curIdx + 1]);
     } else if (dx > 0 && curIdx > 0) {
       // Swipe right → prev tab
       hapticTap();
-      if (typeof switchTab === 'function') switchTab(TAB_ORDER[curIdx - 1]);
+      if (typeof window.switchTab === 'function') window.switchTab(TAB_ORDER[curIdx - 1]);
     }
   }
 
