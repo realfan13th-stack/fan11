@@ -1,5 +1,22 @@
 # 变更日志
 
+## 2026-06-28 22:30 - 移动端底部导航胶囊化重设计 (bottom-nav-capsule)
+
+### 回滚方法
+`git revert HEAD` 或 `git reset --hard HEAD~1`
+
+### 变更列表
+
+1. **底部导航胶囊化**：浮动椭圆形胶囊，圆角 32px，悬浮底边 12px，毛玻璃背景
+2. **4 按钮布局**：主页(🏠)/课表(📅)/晚托(🌙)/数据(⚙️)，选中项有彩色背景+白色图标+阴影
+3. **主题并入数据管理**：主题作为 `dm-panel` 第4个子tab，通过 `switchDM('theme')` 访问
+4. **删除顶部 tab-nav**（移动端）：@media (max-width:600px) 下 `.tab-nav { display:none }`
+5. **主页逻辑**：选中 home 时显示 left-panel 卡片，隐藏 right-panel；其他 tab 反之
+6. **桌面端不受影响**：isMobile 判断确保 left-panel 在桌面端始终可见
+7. **滑动/下拉刷新**：适配新的 TAB_ORDER，home 页更新时钟卡片
+
+---
+
 ## 2026-06-28 - 移动端 UI 重新设计 (mobile-ui-redesign)
 
 ### 版本备份

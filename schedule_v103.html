@@ -666,26 +666,8 @@ body {
   body {
     background: var(--bg, #F5F5F7);
   }
-  /* -- Mobile tab nav: compact cards style -- */
-  .tab-nav {
-    background: var(--card, #FFFFFF);
-    border-bottom: 0.5px solid rgba(0,0,0,0.06);
-    padding: 4px 12px;
-    gap: 2px;
-  }
-  .tab-btn {
-    padding: 8px 16px;
-    font-size: 14px;
-    border-radius: 20px;
-    color: var(--text, #69697C);
-  }
-  .tab-btn.active {
-    background: rgba(89,122,181,0.08);
-    color: var(--accent);
-    font-weight: 600;
-  }
-  .tab-btn::after { display: none; }
-  .tab-btn:active { transform: scale(0.96); opacity: 0.8; }
+  /* -- Mobile tab nav: hidden (replaced by bottom floating capsule) -- */
+  .tab-nav { display: none; }
   /* -- Mobile top bar: clean white iOS style -- */
   .top-bar {
     background: #FFFFFF;
@@ -1283,7 +1265,6 @@ body {
   <button class="tab-btn active" data-tab="class" onclick="switchTab('class')">课表</button>
   <button class="tab-btn" data-tab="afterschool" onclick="switchTab('afterschool')">晚托</button>
   <button class="tab-btn" data-tab="data" onclick="switchTab('data')">数据管理</button>
-  <button class="tab-btn" data-tab="theme" onclick="switchTab('theme')">主题</button>
 </nav>
 
 <!-- ==================== 主内容 ==================== -->
@@ -1371,7 +1352,7 @@ body {
   <main class="right-panel">
 
     <!-- 课表 -->
-    <div class="tab-content active" id="tabClass">
+    <div class="tab-content" id="tabClass">
       <div class="class-subtabs" id="classSubtabs">
         <button class="class-subtab active" data-csub="personal" onclick="switchClassTab('personal')">个人课表</button>
         <button class="class-subtab" data-csub="group" onclick="switchClassTab('group')">班级课表</button>
@@ -1434,6 +1415,7 @@ body {
           <button class="dm-subtab active" data-dm="schedule" onclick="switchDM('schedule')">作息表</button>
           <button class="dm-subtab" data-dm="class" onclick="switchDM('class')">课程表</button>
           <button class="dm-subtab" data-dm="afterschool" onclick="switchDM('afterschool')">晚托</button>
+          <button class="dm-subtab" data-dm="theme" onclick="switchDM('theme')">主题</button>
         </div>
         <!-- 作息表编辑 -->
         <div class="dm-panel active" id="dmSchedule">
@@ -1550,6 +1532,14 @@ body {
           </div>
         </div>
 
+        <!-- 主题 -->
+        <div class="dm-panel" id="dmTheme">
+          <div class="section">
+            <div class="section-title">选择主题色</div>
+            <div class="theme-selector" id="themeSelector"></div>
+          </div>
+        </div>
+
         <!-- 公共导入导出 -->
         <div class="section">
           <div class="section-title">导入 / 导出</div>
@@ -1616,15 +1606,7 @@ body {
       </div>
     </div>
 
-    <!-- 主题 -->
-    <div class="tab-content" id="tabTheme">
-      <div class="data-mgmt">
-        <div class="section">
-          <div class="section-title">选择主题色</div>
-          <div class="theme-selector" id="themeSelector"></div>
-        </div>
-      </div>
-    </div>
+
 
   </main>
 </div>
@@ -1648,7 +1630,7 @@ const CATEGORIES = {
   care:     {label:"\u6258\u7ba1", css:"cat-care"},
 };
 
-let appData, currentTheme="\u4ef0\u671b\u660e\u6708", currentTab="class", currentDM="schedule";
+let appData, currentTheme="\u4ef0\u671b\u660e\u6708", currentTab="home", currentDM="schedule";
 let currentScheduleType="summer", editScheduleMode="summer";
 let scheduleCollapsed=true;
 let sswCollapsed=true;
@@ -1932,19 +1914,35 @@ function switchTab(tab){
   currentTab=tab;
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
   document.querySelectorAll(".tab-content").forEach(c=>c.classList.toggle("active",c.id==="tab"+tab.charAt(0).toUpperCase()+tab.slice(1)));
+  var leftPanel=document.getElementById("leftPanel");
+  var rightPanel=document.querySelector(".right-panel");
+  var isMobile=window.matchMedia('(max-width: 768px)').matches;
+  if(isMobile){
+    if(tab==="home"){
+      if(leftPanel)leftPanel.style.display="";
+      if(rightPanel)rightPanel.style.display="none";
+      try{updateMainStatus();}catch(e){}
+    }else{
+      if(leftPanel)leftPanel.style.display="none";
+      if(rightPanel)rightPanel.style.display="";
+    }
+  }else{
+    if(leftPanel)leftPanel.style.display="";
+    if(rightPanel)rightPanel.style.display="";
+  }
   if(tab==="class"){
     if(currentClassTab==="weekly"){weeklyWeekOffset=0;renderWeekView();}
     else renderClassSchedule();
     try{renderSubstitutions();renderSwaps();updateDotIndicators();}catch(e){}
   }
   if(tab==="afterschool")renderAfterSchool();
-  if(tab==="theme")renderThemeSelector();
   if(tab==="data")initDataManagement();
 }
 function switchDM(dm){
   currentDM=dm;
   document.querySelectorAll(".dm-subtab").forEach(b=>b.classList.toggle("active",b.dataset.dm===dm));
   document.querySelectorAll(".dm-panel").forEach(p=>p.classList.toggle("active",p.id==="dm"+dm.charAt(0).toUpperCase()+dm.slice(1)));
+  if(dm==="theme")renderThemeSelector();
 }
 function switchClassTab(tab){
   currentClassTab=tab;
@@ -4348,6 +4346,8 @@ function init(){
     }
   });
   // SheetJS loaded via head script automatically
+  // Set initial tab state: home shows left-panel cards only
+  try { switchTab('home'); } catch(e) {}
 }
 document.addEventListener("DOMContentLoaded",init);
 
@@ -5183,29 +5183,33 @@ function getExportMonths(startDate,endDate){
   --safe-area-right: env(safe-area-inset-right, 0px);
 }
 
-/* ── P2.1: Bottom Tab Bar (mobile only) ── */
+/* ── P2.1: Bottom Tab Bar (mobile only) ── Floating Capsule ── */
 .pwa-bottom-bar {
   display: none;
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: calc(60px + var(--safe-area-bottom));
-  padding-bottom: var(--safe-area-bottom);
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 0.5px solid rgba(0,0,0,0.08);
+  bottom: calc(12px + var(--safe-area-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  max-width: calc(100vw - 32px);
+  height: 56px;
+  padding: 4px;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-radius: 32px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.06);
   z-index: 99990;
-  justify-content: space-around;
+  justify-content: space-evenly;
   align-items: center;
+  gap: 2px;
 }
 .pwa-bottom-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 0px;
   border: none;
   background: transparent;
   color: #8E8E93;
@@ -5213,36 +5217,45 @@ function getExportMonths(startDate,endDate){
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  padding: 4px 10px;
-  min-height: 48px;
-  min-width: 56px;
-  transition: color .2s, transform .15s;
+  padding: 6px 14px;
+  min-height: 44px;
+  min-width: 48px;
+  border-radius: 24px;
+  transition: all .25s cubic-bezier(.4,0,.2,1);
   -webkit-tap-highlight-color: transparent;
   position: relative;
 }
 .pwa-bottom-btn .pwa-bb-icon {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
 }
 .pwa-bottom-btn .pwa-bb-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   display: block;
 }
 .pwa-bottom-btn.active {
-  color: var(--accent, #597AB5);
+  color: #fff;
+  background: var(--accent, #597AB5);
+  box-shadow: 0 2px 8px rgba(89,122,181,0.35);
+  padding: 6px 16px;
+  font-weight: 600;
+}
+.pwa-bottom-btn.active .pwa-bb-icon {
+  transform: scale(1.05);
 }
 .pwa-bottom-btn:active {
-  transform: scale(0.9);
-  opacity: 0.7;
+  transform: scale(0.92);
+  opacity: 0.8;
 }
 
 @media (max-width: 768px) {
   .pwa-bottom-bar { display: flex; }
-  body { padding-bottom: calc(68px + var(--safe-area-bottom)); }
+  body { padding-bottom: calc(78px + var(--safe-area-bottom)); }
 }
 
 /* ── P2.3: Pull-to-refresh indicator ── */
@@ -5314,15 +5327,15 @@ function getExportMonths(startDate,endDate){
 <script>
 (function initMobileUX() {
   'use strict';
-  var TAB_ORDER = ['class', 'afterschool', 'data', 'theme'];
+  var TAB_ORDER = ['home', 'class', 'afterschool', 'data'];
   // Lucide-style SVG icons (no emoji, no CDN dependency)
   var TAB_ICONS = {
+    'home': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
     'class': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
     'afterschool': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
-    'data': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
-    'theme': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2"/><circle cx="17.5" cy="9.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12" r="1.5"/><circle cx="12.5" cy="14.5" r="1.5"/><circle cx="15.5" cy="15" r="2"/><path d="M6.5 17.5l-3 7h17l-3-7"/></svg>'
+    'data': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
   };
-  var TAB_LABELS = { 'class': '课表', 'afterschool': '晚托', 'data': '数据', 'theme': '主题' };
+  var TAB_LABELS = { 'home': '主页', 'class': '课表', 'afterschool': '晚托', 'data': '数据' };
   var barEl = null;
   var swipeStartX = 0, swipeStartY = 0;
   var ptrEl = null, ptrActive = false, ptrStartY = 0, ptrThreshold = 60;
@@ -5350,7 +5363,7 @@ function getExportMonths(startDate,endDate){
   function syncBottomBar() {
     if (!barEl) return;
     barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn) {
-      btn.classList.toggle('active', btn.dataset.pwaTab === (window.currentTab || 'class'));
+      btn.classList.toggle('active', btn.dataset.pwaTab === (window.currentTab || 'home'));
     });
   }
 
@@ -5380,7 +5393,7 @@ function getExportMonths(startDate,endDate){
     var dx = e.changedTouches[0].clientX - swipeStartX;
     var dy = e.changedTouches[0].clientY - swipeStartY;
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return; // Threshold + horizontal check
-    var curIdx = TAB_ORDER.indexOf(window.currentTab || 'class');
+    var curIdx = TAB_ORDER.indexOf(window.currentTab || 'home');
     if (curIdx < 0) return;
     if (dx < 0 && curIdx < TAB_ORDER.length - 1) {
       // Swipe left → next tab
@@ -5426,10 +5439,10 @@ function getExportMonths(startDate,endDate){
         setTimeout(function() {
           ptrEl.style.display = 'none';
           // Trigger appropriate refresh based on current tab
+          if (window.currentTab === 'home' && typeof updateMainStatus === 'function') updateMainStatus();
           if (window.currentTab === 'class' && typeof renderClassSchedule === 'function') renderClassSchedule();
           if (window.currentTab === 'afterschool' && typeof renderAfterSchool === 'function') renderAfterSchool();
           if (window.currentTab === 'data' && typeof initDataManagement === 'function') initDataManagement();
-          if (window.currentTab === 'theme' && typeof renderThemeSelector === 'function') renderThemeSelector();
         }, 600);
       }
     });
