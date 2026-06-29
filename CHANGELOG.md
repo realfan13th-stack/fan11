@@ -1,5 +1,35 @@
 # 变更日志
 
+## 2026-06-29 21:30 - UI修复 + Laifen风格Tab栏 (ui-fixes-and-laifen-tab-bar)
+
+### 回滚方法
+`git revert HEAD`
+
+### 变更列表
+
+1. **周视图日期选择框移动端修复**：日期输入框从 `.weekly-week-nav` 移出为 `.weekly-header` 独立子元素，CSS 限制 `max-width:140px`，移动端单行不换行且靠右
+2. **删除标题区分割线**：`.top-bar` 删除 `border-bottom:0.5px solid rgba(0,0,0,0.08)`
+3. **导入导出区域重构**：
+   - "导出图片"按钮与"导出 Excel"同一行，均用 `btn-primary`
+   - 统一按钮布局为 `display:flex;flex-wrap:wrap;gap:8px;`
+   - 导入/备份/恢复/清除/范例数据分组摆放
+4. **"主题"tab改为"导出"tab**：
+   - `dmSubtabs` 中 `data-dm="theme"` 按钮文字"主题"→"导出"
+   - 导入导出卡片从公共区域移入 `#dmTheme` 面板内，其他tab不显示
+   - 主题色选择保留在"导出"tab上方
+5. **Laifen风格底部Tab栏**：
+   - Tab栏背景改为 `#E8E8E8` 浅灰，删除毛玻璃效果
+   - 新增白色浮动药丸 `.pwa-tab-pill`，`transform: translateX()` 滑动，spring曲线 `cubic-bezier(0.34, 1.56, 0.64, 1)`
+   - 图标弹跳动画 `@keyframes tab-bounce`，点击时触发 `280ms` 弹跳
+   - 激活Tab颜色 `#1A1A1A`（深黑），未激活 `#AEAEB2`（中灰）
+6. **删除所有右滑切换效果**：
+   - 删除 `initBottomBarSwipe()` 函数（底部栏右滑切换）
+   - 删除 `initSwipeNav()`、`handleSwipeStart()`、`handleSwipeEnd()` 函数（页面右滑切换Tab）
+   - 删除 `initSubtabSwipe()` 函数（次级Tab右滑切换）
+   - 删除相关变量 `swipeStartX`、`swipeStartY`
+
+---
+
 ## 2026-06-29 20:45 - Tab区修复 + 次级Tab滑动 (fix-tab-and-schedule-bugs)
 
 ### 回滚方法
