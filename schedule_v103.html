@@ -4901,8 +4901,18 @@ function getExportMonths(startDate,endDate){
 <script>
 (function initPWA() {
   'use strict';
-  var APP_VERSION = 'v103-pwa-1';
+  var APP_VERSION = 'v103-pwa-2';
   var CACHE_NAME = 'schedule-workbench-' + APP_VERSION;
+  // Self-healing: clear old caches & unregister old SWs when version changes
+  try {
+    var _storedVer = localStorage.getItem('sw_version');
+    if (_storedVer && _storedVer !== APP_VERSION) {
+      console.log('[PWA] Version changed from', _storedVer, 'to', APP_VERSION, '— clearing caches');
+      if ('caches' in window) caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); });
+      if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); });
+    }
+    localStorage.setItem('sw_version', APP_VERSION);
+  } catch(e) {}
 
   // ── P0.1: Generate App Icon (via canvas → PNG data URI) ──
   function generateIcon(size, cb) {
@@ -4941,11 +4951,16 @@ function getExportMonths(startDate,endDate){
 
   // ── P0.2: Inject Manifest ──
   function injectManifest(icon192, icon512) {
+    // Blob URL manifests resolve relative URLs against the Blob URL (blob:https://...),
+    // which is invalid and causes PWA 404. Use absolute URLs derived from location.
+    var _pageUrl = location.href.split('#')[0].split('?')[0];
+    var _scopeUrl = _pageUrl.substring(0, _pageUrl.lastIndexOf('/') + 1);
     var manifest = {
       name: '教师作息工作台',
       short_name: '工作台',
       description: '教师个人作息管理与课表工作台',
-      start_url: '.',
+      start_url: _pageUrl,
+      scope: _scopeUrl,
       display: 'standalone',
       orientation: 'any',
       background_color: '#F9FCF6',
@@ -4970,6 +4985,16 @@ function getExportMonths(startDate,endDate){
 
   // ── P0.3: Register Service Worker (inline via Blob URL) ──
   function registerSW() {
+    // Aggressively unregister ALL old service workers first.
+    // The old SW used Cache-First which locks users into stale content.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(reg) {
+          console.log('[PWA] Unregistering old SW:', reg.scope);
+          reg.unregister();
+        });
+      }).catch(function(){});
+    }
     var swCode = [
       'var CACHE_NAME = "' + CACHE_NAME + '";',
       'var urlsToCache = [self.location.href.split("?")[0].split("#")[0]];',
@@ -5000,23 +5025,23 @@ function getExportMonths(startDate,endDate){
       '    }).then(function() { return self.clients.claim(); })',
       '  );',
       '});',
-      '// Fetch: Cache-First strategy',
+      '// Fetch: Network-First strategy (always get latest, fall back to cache when offline)',
       'self.addEventListener("fetch", function(event) {',
       '  if (event.request.method !== "GET") return;',
       '  event.respondWith(',
-      '    caches.match(event.request).then(function(cached) {',
-      '      if (cached) return cached;',
-      '      return fetch(event.request).then(function(response) {',
-      '        if (!response || response.status !== 200 || response.type !== "basic") {',
-      '          return response;',
-      '        }',
-      '        var clone = response.clone();',
-      '        caches.open(CACHE_NAME).then(function(cache) {',
-      '          cache.put(event.request, clone);',
-      '        });',
+      '    fetch(event.request).then(function(response) {',
+      '      if (!response || response.status !== 200 || response.type !== "basic") {',
       '        return response;',
-      '      }).catch(function() {',
-      '        // Offline fallback',
+      '      }',
+      '      var clone = response.clone();',
+      '      caches.open(CACHE_NAME).then(function(cache) {',
+      '        cache.put(event.request, clone);',
+      '      });',
+      '      return response;',
+      '    }).catch(function() {',
+      '      // Network failed — fall back to cache, then offline page',
+      '      return caches.match(event.request).then(function(cached) {',
+      '        if (cached) return cached;',
       '        return new Response(',
       '          "<!DOCTYPE html><html><head><meta charset=utf-8>" +',
       '          "<meta name=viewport content=\\"width=device-width,initial-scale=1\\">" +',
@@ -5515,14 +5540,15 @@ function getExportMonths(startDate,endDate){
 
   function syncBottomBar() {
     if (!barEl) return;
-    // Sync from external currentTab to local activePillIdx
-    var externalTab = (typeof window.currentTab !== 'undefined') ? window.currentTab : 'home';
-    var extIdx = TAB_ORDER.indexOf(externalTab);
-    if (extIdx >= 0 && extIdx !== activePillIdx) {
-      activePillIdx = extIdx;
+    // currentTab is a top-level `let` (line ~1649), NOT a property of window.
+    // window.currentTab is always undefined → must use the bare identifier.
+    var cur = (typeof currentTab !== 'undefined') ? currentTab : 'home';
+    var idx = TAB_ORDER.indexOf(cur);
+    if (idx >= 0 && idx !== activePillIdx) {
+      activePillIdx = idx;
     }
-    barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn) {
-      btn.classList.toggle('active', btn.dataset.pwaTab === (externalTab || 'home'));
+    barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn, i) {
+      btn.classList.toggle('active', i === activePillIdx);
     });
     snapPillTo(activePillIdx);
   }
@@ -5541,10 +5567,18 @@ function getExportMonths(startDate,endDate){
     try {
       if (origSwitchTab) origSwitchTab(tab);
     } finally {
-      // Always sync local state, even if switchTab throws
+      // Sync directly from the `tab` argument — do NOT call syncBottomBar()
+      // (which reads currentTab and could clobber if origSwitchTab threw).
       var idx = TAB_ORDER.indexOf(tab);
-      if (idx >= 0) activePillIdx = idx;
-      syncBottomBar();
+      if (idx >= 0) {
+        activePillIdx = idx;
+        if (barEl) {
+          barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn, i) {
+            btn.classList.toggle('active', i === idx);
+          });
+          snapPillTo(idx);
+        }
+      }
     }
   };
 
@@ -5581,10 +5615,11 @@ function getExportMonths(startDate,endDate){
         setTimeout(function() {
           ptrEl.style.display = 'none';
           // Trigger appropriate refresh based on current tab
-          if (window.currentTab === 'home' && typeof updateMainStatus === 'function') updateMainStatus();
-          if (window.currentTab === 'class' && typeof renderClassSchedule === 'function') renderClassSchedule();
-          if (window.currentTab === 'afterschool' && typeof renderAfterSchool === 'function') renderAfterSchool();
-          if (window.currentTab === 'data' && typeof initDataManagement === 'function') initDataManagement();
+          var _curTab = (typeof currentTab !== 'undefined') ? currentTab : 'home';
+          if (_curTab === 'home' && typeof updateMainStatus === 'function') updateMainStatus();
+          if (_curTab === 'class' && typeof renderClassSchedule === 'function') renderClassSchedule();
+          if (_curTab === 'afterschool' && typeof renderAfterSchool === 'function') renderAfterSchool();
+          if (_curTab === 'data' && typeof initDataManagement === 'function') initDataManagement();
         }, 600);
       }
     });
