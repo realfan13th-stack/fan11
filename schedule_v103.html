@@ -5256,6 +5256,14 @@ function getExportMonths(startDate,endDate){
   justify-content: space-evenly;
   align-items: center;
   gap: 0;
+  /* Prevent long-press text/image selection & callout menus */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  /* Tell browser we handle all touch gestures here (no scroll/zoom interference) */
+  touch-action: none;
 }
 /* Floating pill indicator - capsule shape */
 .pwa-tab-pill {
@@ -5294,6 +5302,13 @@ function getExportMonths(startDate,endDate){
   position: relative;
   z-index: 1;
   flex: 1;
+  /* Prevent selection / callout on buttons too */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  /* Remove CSS :active scale (handled by JS to avoid drag-time flicker) */
+  -webkit-tap-highlight-color: transparent;
 }
 .pwa-bottom-btn .pwa-bb-icon {
   width: 24px;
@@ -5315,7 +5330,7 @@ function getExportMonths(startDate,endDate){
 .pwa-bottom-btn.active .pwa-bb-icon {
   color: #1A1A1A;
 }
-.pwa-bottom-btn:active {
+.pwa-bottom-btn.pressed {
   transform: scale(0.92);
   opacity: 0.8;
 }
@@ -5429,80 +5444,101 @@ function getExportMonths(startDate,endDate){
     pillEl = document.createElement('div');
     pillEl.className = 'pwa-tab-pill';
     barEl.appendChild(pillEl);
-    TAB_ORDER.forEach(function(tab) {
+    TAB_ORDER.forEach(function(tab, i) {
       var btn = document.createElement('button');
       btn.className = 'pwa-bottom-btn';
       btn.dataset.pwaTab = tab;
-      btn.dataset.idx = '' + TAB_ORDER.indexOf(tab);
+      btn.dataset.idx = '' + i;
       btn.innerHTML = '<span class="pwa-bb-icon">' + TAB_ICONS[tab] + '</span><span>' + TAB_LABELS[tab] + '</span>';
-      btn.addEventListener('click', function(e) {
-        hapticTap();
-        // Bounce animation
-        this.classList.remove('bouncing');
-        void this.offsetWidth;
-        this.classList.add('bouncing');
-        var self = this;
-        setTimeout(function() { self.classList.remove('bouncing'); }, 300);
-        // Switch tab and move pill
-        var newIdx = parseInt(this.dataset.idx, 10);
-        moveToTab(newIdx);
-      }, true); // capture phase so it fires before pointerup handlers
+      // NO click listener — click + drag unified via Pointer Events below.
+      // This prevents the "click fires after drag, clobbering the result" bug.
       barEl.appendChild(btn);
     });
     document.body.appendChild(barEl);
     syncBottomBar();
-    // ── Pointer-based drag-to-swipe ──
+    // ── Unified Pointer Events: handles both tap-to-switch and drag-to-swipe ──
     barEl.addEventListener('pointerdown', onPointerDown);
     barEl.addEventListener('pointermove', onPointerMove);
     barEl.addEventListener('pointerup', onPointerUp);
-    barEl.addEventListener('pointercancel', onPointerUp);
+    barEl.addEventListener('pointercancel', onPointerCancel);
+    // Block long-press context menu (iOS/Android callout)
+    barEl.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+    // Suppress stray click events after drag (belt-and-suspenders, since we
+    // removed click listeners, the global haptic listener may still fire)
+    barEl.addEventListener('click', function(e) {
+      if (_suppressedClick) {
+        e.preventDefault();
+        e.stopPropagation();
+        _suppressedClick = false;
+      }
+    }, true);
   }
 
-  // ── Drag state ──
-  var _ptrDown = false, _ptrStartX = 0, _ptrStartIdx = 0, _isDrag = false;
+  // ── Drag/tap state ──
+  var _ptrDown = false, _ptrStartX = 0, _ptrStartY = 0, _ptrStartIdx = 0;
+  var _isDrag = false, _ptrDownTime = 0, _suppressedClick = false;
+  var _pressedBtn = null;
+  var DRAG_THRESHOLD = 6; // px — lower = more forgiving drag start
 
   function onPointerDown(e) {
-    if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return; // Only touch/pen, not mouse
+    // Accept ALL pointer types (touch, pen, mouse) for consistent behavior
     _ptrDown = true;
     _isDrag = false;
+    _suppressedClick = false;
     _ptrStartX = e.clientX;
+    _ptrStartY = e.clientY;
     _ptrStartIdx = activePillIdx;
+    _ptrDownTime = Date.now();
     if (pillEl) pillEl.style.transition = 'none';
-    barEl.setPointerCapture && barEl.setPointerCapture(e.pointerId);
+    try { barEl.setPointerCapture && barEl.setPointerCapture(e.pointerId); } catch(_) {}
+    // Visual press feedback
+    var el = document.elementFromPoint(e.clientX, e.clientY);
+    _pressedBtn = el && el.closest && el.closest('.pwa-bottom-btn');
+    if (_pressedBtn) _pressedBtn.classList.add('pressed');
+    // Prevent default to stop text selection, scroll, and long-press menus
+    e.preventDefault();
   }
 
   function onPointerMove(e) {
     if (!_ptrDown || !pillEl || !barEl) return;
     var dx = e.clientX - _ptrStartX;
-    // Require minimum movement for drag
-    if (!_isDrag && Math.abs(dx) < 10) return;
-    _isDrag = true;
-
+    var dy = e.clientY - _ptrStartY;
+    if (!_isDrag) {
+      if (Math.abs(dx) < DRAG_THRESHOLD) return;
+      // If vertical movement dominates, user is scrolling the page — bail out
+      if (Math.abs(dy) > Math.abs(dx) * 1.5) {
+        _ptrDown = false;
+        if (_pressedBtn) { _pressedBtn.classList.remove('pressed'); _pressedBtn = null; }
+        return;
+      }
+      // Drag started — remove press feedback
+      _isDrag = true;
+      if (_pressedBtn) { _pressedBtn.classList.remove('pressed'); _pressedBtn = null; }
+    }
     var barRect = barEl.getBoundingClientRect();
     var innerWidth = barRect.width - 16; // padding 8*2
     var tabWidth = innerWidth / TAB_ORDER.length;
     var rawIdx = _ptrStartIdx + dx / tabWidth;
     var clampedIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, rawIdx));
-
     // Move pill to finger position
     pillEl.style.transform = 'translateX(' + (clampedIdx * tabWidth) + 'px)';
     pillEl.style.width = tabWidth + 'px';
-
     // Highlight nearest button
     var nearestIdx = Math.round(clampedIdx);
     barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn, i) {
       btn.classList.toggle('active', i === nearestIdx);
     });
-
-    // Prevent scroll during drag
     e.preventDefault();
   }
 
   function onPointerUp(e) {
     if (!_ptrDown) return;
     _ptrDown = false;
+    if (_pressedBtn) { _pressedBtn.classList.remove('pressed'); _pressedBtn = null; }
     if (pillEl) pillEl.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)';
     if (_isDrag) {
+      // ── Drag end: snap to nearest tab ──
+      _suppressedClick = true; // kill the click event browser will fire
       var dx = e.clientX - _ptrStartX;
       var barRect = barEl.getBoundingClientRect();
       var innerWidth = barRect.width - 16;
@@ -5510,8 +5546,31 @@ function getExportMonths(startDate,endDate){
       var landedIdx = Math.round(_ptrStartIdx + dx / tabWidth);
       landedIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, landedIdx));
       moveToTab(landedIdx);
+    } else {
+      // ── Tap: find which button is under the finger and switch ──
+      _suppressedClick = true; // we handle it, suppress browser click
+      var el = document.elementFromPoint(e.clientX, e.clientY);
+      var btn = el && el.closest && el.closest('.pwa-bottom-btn');
+      if (btn) {
+        hapticTap();
+        // Bounce animation
+        btn.classList.remove('bouncing');
+        void btn.offsetWidth;
+        btn.classList.add('bouncing');
+        setTimeout(function() { btn.classList.remove('bouncing'); }, 300);
+        var newIdx = parseInt(btn.dataset.idx, 10);
+        moveToTab(newIdx);
+      }
     }
     _isDrag = false;
+  }
+
+  function onPointerCancel(e) {
+    _ptrDown = false;
+    _isDrag = false;
+    if (_pressedBtn) { _pressedBtn.classList.remove('pressed'); _pressedBtn = null; }
+    if (pillEl) pillEl.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)';
+    snapPillTo(activePillIdx);
   }
 
   // ── Core: Move to specific tab index (used by both click & drag) ──
