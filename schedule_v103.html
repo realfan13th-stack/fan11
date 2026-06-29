@@ -5231,14 +5231,13 @@ function getExportMonths(startDate,endDate){
   justify-content: space-evenly;
   align-items: center;
   gap: 0;
-  position: relative;
 }
 /* Floating pill indicator */
 .pwa-tab-pill {
   position: absolute;
   top: 6px;
-  left: 0;
-  width: calc(25% - 3px);
+  left: 6px;
+  width: calc(25% - 4px);
   height: 52px;
   background: #FFFFFF;
   border-radius: 14px;
@@ -5435,9 +5434,15 @@ function getExportMonths(startDate,endDate){
     if (!pillEl || !barEl) return;
     var idx = TAB_ORDER.indexOf(window.currentTab || 'home');
     if (idx < 0) idx = 0;
-    var tabWidth = barEl.offsetWidth > 0 ? barEl.offsetWidth / TAB_ORDER.length : 0;
-    pillEl.style.transform = 'translateX(' + (idx * tabWidth) + 'px)';
+    // Each tab gets equal width (flex:1), pill width = bar inner width / 4
+    var innerWidth = barEl.offsetWidth - 16; // subtract padding 8px*2
+    var tabWidth = innerWidth / TAB_ORDER.length;
+    var pillLeft = 8 + idx * tabWidth; // 8 = padding-left
+    pillEl.style.transform = 'translateX(' + pillLeft + 'px)';
+    pillEl.style.width = tabWidth + 'px';
   }
+  // Recalculate on resize
+  window.addEventListener('resize', updatePillPosition);
 
   // Hook into existing switchTab to sync bottom bar
   var origSwitchTab = window.switchTab;
