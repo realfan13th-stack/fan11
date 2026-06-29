@@ -5391,7 +5391,7 @@ function getExportMonths(startDate,endDate){
   var barEl = null;
   var ptrEl = null, ptrActive = false, ptrStartY = 0, ptrThreshold = 60;
   // Drag swipe state
-  var dragActive = false, dragStartX = 0, dragStartIdx = 0;
+  var dragActive = false, dragStartX = 0, dragStartIdx = 0, dragMoved = false;
 
   // ── P2.1: Create Bottom Tab Bar (mobile only) ── Laifen Floating Pill ──
   var pillEl = null;
@@ -5410,6 +5410,7 @@ function getExportMonths(startDate,endDate){
       btn.dataset.pwaTab = tab;
       btn.innerHTML = '<span class="pwa-bb-icon">' + TAB_ICONS[tab] + '</span><span>' + TAB_LABELS[tab] + '</span>';
       btn.addEventListener('click', function() {
+        if (dragMoved) return; // Skip click after drag
         hapticTap();
         // Trigger bounce animation
         btn.classList.remove('bouncing');
@@ -5436,6 +5437,7 @@ function getExportMonths(startDate,endDate){
     dragStartIdx = TAB_ORDER.indexOf(window.currentTab || 'home');
     if (dragStartIdx < 0) dragStartIdx = 0;
     dragActive = true;
+    dragMoved = false;
     // Disable transition for real-time follow
     if (pillEl) pillEl.style.transition = 'none';
   }
@@ -5444,6 +5446,9 @@ function getExportMonths(startDate,endDate){
     if (!dragActive || !pillEl || !barEl) return;
     var touch = e.touches[0];
     var dx = touch.clientX - dragStartX;
+    // Require minimum movement to count as drag (prevent accidental micro-moves)
+    if (Math.abs(dx) < 8) return;
+    dragMoved = true;
     var m = getPillMetrics();
     // How many tabs to shift
     var shift = dx / m.tabW;
@@ -5462,11 +5467,16 @@ function getExportMonths(startDate,endDate){
   }
 
   function onBarTouchEnd(e) {
-    if (!dragActive || !pillEl) return;
+    if (!dragActive) return;
     dragActive = false;
     // Re-enable spring transition
-    pillEl.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)';
-    // Calculate which tab we landed on
+    if (pillEl) pillEl.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)';
+    if (!dragMoved) {
+      // Pure tap: let click handler handle it, just restore pill to current position
+      dragStartX = 0;
+      return;
+    }
+    // User dragged → calculate landing tab and switch
     var dx = 0;
     if (e.changedTouches && e.changedTouches.length === 1) {
       dx = e.changedTouches[0].clientX - dragStartX;
@@ -5479,7 +5489,7 @@ function getExportMonths(startDate,endDate){
     if (targetTab !== (window.currentTab || 'home')) {
       if (typeof window.switchTab === 'function') window.switchTab(targetTab);
     } else {
-      // Same tab - still snap pill back
+      // Same tab - snap pill back
       updatePillPosition(landedIdx);
     }
     // Sync active classes

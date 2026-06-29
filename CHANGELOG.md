@@ -1,5 +1,17 @@
 # 变更日志
 
+## 2026-06-29 22:05 - 修复药丸弹回主页Bug (fix-pill-snap-back)
+
+### 回滚方法
+`git revert HEAD`
+
+### 变更列表
+1. **区分点击与拖拽手势**：新增 `dragMoved` 标志位，`touchmove` 中移动超过 8px 才标记为拖拽
+2. **纯点击不触发 touchend 吸附**：`dragMoved=false` 时 `onBarTouchEnd` 直接 return，不干扰 click 事件
+3. **拖拽后阻止 click**：按钮 click 事件中检查 `dragMoved`，为 true 则跳过，避免双重触发
+
+---
+
 ## 2026-06-29 21:56 - Laifen Tab栏三Bug修复 (fix-laifen-pill-bugs)
 
 ### 回滚方法
