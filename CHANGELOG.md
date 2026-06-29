@@ -1,5 +1,24 @@
 # 变更日志
 
+## 2026-06-29 21:56 - Laifen Tab栏三Bug修复 (fix-laifen-pill-bugs)
+
+### 回滚方法
+`git revert HEAD`
+
+### 变更列表
+
+1. **药丸形状改为胶囊形**：`border-radius: 14px` → `26px`（高度52px的一半），形成两端半圆的椭圆形胶囊
+2. **修复药丸位置偏移**：
+   - CSS `left: 6px` → `8px`（精确对齐 bar 的 padding-left）
+   - `updatePillPosition` 中 `pillLeft = 8 + idx * tabWidth` → 直接 `translateX(idx * tabWidth)`
+   - 抽取 `getPillMetrics()` 工具函数，药丸宽度和位置计算统一
+3. **实现长按拖拽滑动**：
+   - `touchstart` → 禁用 pill transition，记录起始位置和当前 tab
+   - `touchmove` → 药丸实时跟随手指（无过渡动画），动态高亮最近的 tab 按钮，`e.preventDefault()` 防止页面滚动
+   - `touchend` → 恢复 spring 过渡动画（`cubic-bezier(0.34, 1.56, 0.64, 1)`），松手后药丸弹性吸附到最近 tab，自动切换
+
+---
+
 ## 2026-06-29 21:30 - UI修复 + Laifen风格Tab栏 (ui-fixes-and-laifen-tab-bar)
 
 ### 回滚方法

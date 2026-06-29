@@ -5232,15 +5232,15 @@ function getExportMonths(startDate,endDate){
   align-items: center;
   gap: 0;
 }
-/* Floating pill indicator */
+/* Floating pill indicator - capsule shape */
 .pwa-tab-pill {
   position: absolute;
   top: 6px;
-  left: 6px;
-  width: calc(25% - 4px);
+  left: 8px;
+  width: calc(25% - 5px);
   height: 52px;
   background: #FFFFFF;
-  border-radius: 14px;
+  border-radius: 26px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   will-change: transform;
   transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -5390,6 +5390,8 @@ function getExportMonths(startDate,endDate){
   var TAB_LABELS = { 'home': '主页', 'class': '课表', 'afterschool': '晚托', 'data': '数据' };
   var barEl = null;
   var ptrEl = null, ptrActive = false, ptrStartY = 0, ptrThreshold = 60;
+  // Drag swipe state
+  var dragActive = false, dragStartX = 0, dragStartIdx = 0;
 
   // ── P2.1: Create Bottom Tab Bar (mobile only) ── Laifen Floating Pill ──
   var pillEl = null;
@@ -5420,6 +5422,69 @@ function getExportMonths(startDate,endDate){
     });
     document.body.appendChild(barEl);
     syncBottomBar();
+    // ── Drag-to-swipe: pill follows finger ──
+    barEl.addEventListener('touchstart', onBarTouchStart, { passive: false });
+    barEl.addEventListener('touchmove', onBarTouchMove, { passive: false });
+    barEl.addEventListener('touchend', onBarTouchEnd, { passive: false });
+    barEl.addEventListener('touchcancel', onBarTouchEnd, { passive: false });
+  }
+
+  function onBarTouchStart(e) {
+    if (!e.touches || e.touches.length !== 1) return;
+    var touch = e.touches[0];
+    dragStartX = touch.clientX;
+    dragStartIdx = TAB_ORDER.indexOf(window.currentTab || 'home');
+    if (dragStartIdx < 0) dragStartIdx = 0;
+    dragActive = true;
+    // Disable transition for real-time follow
+    if (pillEl) pillEl.style.transition = 'none';
+  }
+
+  function onBarTouchMove(e) {
+    if (!dragActive || !pillEl || !barEl) return;
+    var touch = e.touches[0];
+    var dx = touch.clientX - dragStartX;
+    var m = getPillMetrics();
+    // How many tabs to shift
+    var shift = dx / m.tabW;
+    var targetIdx = dragStartIdx + shift;
+    // Clamp to valid range
+    targetIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, targetIdx));
+    // Move pill proportionally (no snapping during drag)
+    pillEl.style.transform = 'translateX(' + (targetIdx * m.tabW) + 'px)';
+    pillEl.style.width = m.tabW + 'px';
+    // Highlight nearest button
+    var nearestIdx = Math.round(targetIdx);
+    barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn, i) {
+      btn.classList.toggle('active', i === nearestIdx);
+    });
+    e.preventDefault(); // Prevent page scroll
+  }
+
+  function onBarTouchEnd(e) {
+    if (!dragActive || !pillEl) return;
+    dragActive = false;
+    // Re-enable spring transition
+    pillEl.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)';
+    // Calculate which tab we landed on
+    var dx = 0;
+    if (e.changedTouches && e.changedTouches.length === 1) {
+      dx = e.changedTouches[0].clientX - dragStartX;
+    }
+    var m = getPillMetrics();
+    var landedIdx = Math.round(dragStartIdx + dx / m.tabW);
+    landedIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, landedIdx));
+    // Snap to nearest tab
+    var targetTab = TAB_ORDER[landedIdx] || 'home';
+    if (targetTab !== (window.currentTab || 'home')) {
+      if (typeof window.switchTab === 'function') window.switchTab(targetTab);
+    } else {
+      // Same tab - still snap pill back
+      updatePillPosition(landedIdx);
+    }
+    // Sync active classes
+    syncBottomBar();
+    dragStartX = 0;
   }
 
   function syncBottomBar() {
@@ -5430,19 +5495,23 @@ function getExportMonths(startDate,endDate){
     updatePillPosition();
   }
 
-  function updatePillPosition() {
+  function getPillMetrics() {
+    if (!barEl) return { innerW: 0, tabW: 0 };
+    var innerW = barEl.offsetWidth - 16; // padding 8px*2
+    return { innerW: innerW, tabW: innerW / TAB_ORDER.length };
+  }
+
+  function updatePillPosition(idxOverride) {
     if (!pillEl || !barEl) return;
-    var idx = TAB_ORDER.indexOf(window.currentTab || 'home');
+    var idx = typeof idxOverride === 'number' ? idxOverride : TAB_ORDER.indexOf(window.currentTab || 'home');
     if (idx < 0) idx = 0;
-    // Each tab gets equal width (flex:1), pill width = bar inner width / 4
-    var innerWidth = barEl.offsetWidth - 16; // subtract padding 8px*2
-    var tabWidth = innerWidth / TAB_ORDER.length;
-    var pillLeft = 8 + idx * tabWidth; // 8 = padding-left
-    pillEl.style.transform = 'translateX(' + pillLeft + 'px)';
-    pillEl.style.width = tabWidth + 'px';
+    var m = getPillMetrics();
+    // CSS left:8px = padding-left, so translateX = idx * tabW puts pill at each tab's start
+    pillEl.style.transform = 'translateX(' + (idx * m.tabW) + 'px)';
+    pillEl.style.width = m.tabW + 'px';
   }
   // Recalculate on resize
-  window.addEventListener('resize', updatePillPosition);
+  window.addEventListener('resize', function() { updatePillPosition(); });
 
   // Hook into existing switchTab to sync bottom bar
   var origSwitchTab = window.switchTab;
