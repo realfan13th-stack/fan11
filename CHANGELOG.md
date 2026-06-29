@@ -1,5 +1,30 @@
 # 变更日志
 
+## 2026-06-29 22:11 - 药丸彻底重写 + PWA 404修复 (pill-rewrite-pwa-fix)
+
+### 回滚方法
+`git revert HEAD`
+
+### 变更列表
+1. **药丸逻辑彻底重写**：
+   - 新增 `activePillIdx` 本地状态变量，不再依赖 `window.currentTab || 'home'` 外部读取
+   - 核心函数 `moveToTab(idx)` 统一处理：更新本地状态 → 更新按钮高亮 → 动画药丸 → 调用 switchTab
+   - 用 **Pointer Events**（`pointerdown/move/up`）替代 Touch Events，兼容性更好，支持 `setPointerCapture`
+2. **拖拽滑动修复**：
+   - `pointermove` 中直接从手指位置计算药丸位置（`getBoundingClientRect()` 实时获取尺寸）
+   - 拖拽距离 >=10px 才标记为拖拽，区分点击和滑动
+   - `pointerup` 时恢复 spring 过渡动画并弹性吸附到最近 tab
+3. **点击修复**：
+   - click 事件在捕获阶段注册（`{capture:true}`），确保在 pointerup 之前触发
+   - 点击直接调用 `moveToTab(idx)`，不再有事件竞争问题
+4. **syncBottomBar 增强**：从外部 currentTab 同步回本地 activePillIdx，双向同步
+5. **PWA 404 修复**：
+   - `manifest.json` 的 `start_url` 从 `/schedule-workbench/schedule_v103.html` 改为 `./schedule_v103.html`（相对路径）
+   - `scope` 从 `/schedule-workbench/` 改为 `./`
+   - **注意**：修改 manifest 后需删除旧快捷方式重新"添加到主屏幕"
+
+---
+
 ## 2026-06-29 22:05 - 修复药丸弹回主页Bug (fix-pill-snap-back)
 
 ### 回滚方法

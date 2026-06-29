@@ -5390,11 +5390,11 @@ function getExportMonths(startDate,endDate){
   var TAB_LABELS = { 'home': '主页', 'class': '课表', 'afterschool': '晚托', 'data': '数据' };
   var barEl = null;
   var ptrEl = null, ptrActive = false, ptrStartY = 0, ptrThreshold = 60;
-  // Drag swipe state
-  var dragActive = false, dragStartX = 0, dragStartIdx = 0, dragMoved = false;
 
   // ── P2.1: Create Bottom Tab Bar (mobile only) ── Laifen Floating Pill ──
   var pillEl = null;
+  // Track active index LOCALLY to avoid relying on external currentTab timing
+  var activePillIdx = 0;
 
   function createBottomBar() {
     barEl = document.createElement('nav');
@@ -5408,117 +5408,129 @@ function getExportMonths(startDate,endDate){
       var btn = document.createElement('button');
       btn.className = 'pwa-bottom-btn';
       btn.dataset.pwaTab = tab;
+      btn.dataset.idx = '' + TAB_ORDER.indexOf(tab);
       btn.innerHTML = '<span class="pwa-bb-icon">' + TAB_ICONS[tab] + '</span><span>' + TAB_LABELS[tab] + '</span>';
-      btn.addEventListener('click', function() {
-        if (dragMoved) return; // Skip click after drag
+      btn.addEventListener('click', function(e) {
         hapticTap();
-        // Trigger bounce animation
-        btn.classList.remove('bouncing');
-        void btn.offsetWidth; // force reflow
-        btn.classList.add('bouncing');
-        setTimeout(function() { btn.classList.remove('bouncing'); }, 300);
-        if (typeof window.switchTab === 'function') window.switchTab(tab);
-      });
+        // Bounce animation
+        this.classList.remove('bouncing');
+        void this.offsetWidth;
+        this.classList.add('bouncing');
+        var self = this;
+        setTimeout(function() { self.classList.remove('bouncing'); }, 300);
+        // Switch tab and move pill
+        var newIdx = parseInt(this.dataset.idx, 10);
+        moveToTab(newIdx);
+      }, true); // capture phase so it fires before pointerup handlers
       barEl.appendChild(btn);
     });
     document.body.appendChild(barEl);
     syncBottomBar();
-    // ── Drag-to-swipe: pill follows finger ──
-    barEl.addEventListener('touchstart', onBarTouchStart, { passive: false });
-    barEl.addEventListener('touchmove', onBarTouchMove, { passive: false });
-    barEl.addEventListener('touchend', onBarTouchEnd, { passive: false });
-    barEl.addEventListener('touchcancel', onBarTouchEnd, { passive: false });
+    // ── Pointer-based drag-to-swipe ──
+    barEl.addEventListener('pointerdown', onPointerDown);
+    barEl.addEventListener('pointermove', onPointerMove);
+    barEl.addEventListener('pointerup', onPointerUp);
+    barEl.addEventListener('pointercancel', onPointerUp);
   }
 
-  function onBarTouchStart(e) {
-    if (!e.touches || e.touches.length !== 1) return;
-    var touch = e.touches[0];
-    dragStartX = touch.clientX;
-    dragStartIdx = TAB_ORDER.indexOf(window.currentTab || 'home');
-    if (dragStartIdx < 0) dragStartIdx = 0;
-    dragActive = true;
-    dragMoved = false;
-    // Disable transition for real-time follow
+  // ── Drag state ──
+  var _ptrDown = false, _ptrStartX = 0, _ptrStartIdx = 0, _isDrag = false;
+
+  function onPointerDown(e) {
+    if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return; // Only touch/pen, not mouse
+    _ptrDown = true;
+    _isDrag = false;
+    _ptrStartX = e.clientX;
+    _ptrStartIdx = activePillIdx;
     if (pillEl) pillEl.style.transition = 'none';
+    barEl.setPointerCapture && barEl.setPointerCapture(e.pointerId);
   }
 
-  function onBarTouchMove(e) {
-    if (!dragActive || !pillEl || !barEl) return;
-    var touch = e.touches[0];
-    var dx = touch.clientX - dragStartX;
-    // Require minimum movement to count as drag (prevent accidental micro-moves)
-    if (Math.abs(dx) < 8) return;
-    dragMoved = true;
-    var m = getPillMetrics();
-    // How many tabs to shift
-    var shift = dx / m.tabW;
-    var targetIdx = dragStartIdx + shift;
-    // Clamp to valid range
-    targetIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, targetIdx));
-    // Move pill proportionally (no snapping during drag)
-    pillEl.style.transform = 'translateX(' + (targetIdx * m.tabW) + 'px)';
-    pillEl.style.width = m.tabW + 'px';
+  function onPointerMove(e) {
+    if (!_ptrDown || !pillEl || !barEl) return;
+    var dx = e.clientX - _ptrStartX;
+    // Require minimum movement for drag
+    if (!_isDrag && Math.abs(dx) < 10) return;
+    _isDrag = true;
+
+    var barRect = barEl.getBoundingClientRect();
+    var innerWidth = barRect.width - 16; // padding 8*2
+    var tabWidth = innerWidth / TAB_ORDER.length;
+    var rawIdx = _ptrStartIdx + dx / tabWidth;
+    var clampedIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, rawIdx));
+
+    // Move pill to finger position
+    pillEl.style.transform = 'translateX(' + (clampedIdx * tabWidth) + 'px)';
+    pillEl.style.width = tabWidth + 'px';
+
     // Highlight nearest button
-    var nearestIdx = Math.round(targetIdx);
+    var nearestIdx = Math.round(clampedIdx);
     barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn, i) {
       btn.classList.toggle('active', i === nearestIdx);
     });
-    e.preventDefault(); // Prevent page scroll
+
+    // Prevent scroll during drag
+    e.preventDefault();
   }
 
-  function onBarTouchEnd(e) {
-    if (!dragActive) return;
-    dragActive = false;
-    // Re-enable spring transition
+  function onPointerUp(e) {
+    if (!_ptrDown) return;
+    _ptrDown = false;
     if (pillEl) pillEl.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)';
-    if (!dragMoved) {
-      // Pure tap: let click handler handle it, just restore pill to current position
-      dragStartX = 0;
-      return;
+    if (_isDrag) {
+      var dx = e.clientX - _ptrStartX;
+      var barRect = barEl.getBoundingClientRect();
+      var innerWidth = barRect.width - 16;
+      var tabWidth = innerWidth / TAB_ORDER.length;
+      var landedIdx = Math.round(_ptrStartIdx + dx / tabWidth);
+      landedIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, landedIdx));
+      moveToTab(landedIdx);
     }
-    // User dragged → calculate landing tab and switch
-    var dx = 0;
-    if (e.changedTouches && e.changedTouches.length === 1) {
-      dx = e.changedTouches[0].clientX - dragStartX;
-    }
-    var m = getPillMetrics();
-    var landedIdx = Math.round(dragStartIdx + dx / m.tabW);
-    landedIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, landedIdx));
-    // Snap to nearest tab
-    var targetTab = TAB_ORDER[landedIdx] || 'home';
-    if (targetTab !== (window.currentTab || 'home')) {
-      if (typeof window.switchTab === 'function') window.switchTab(targetTab);
-    } else {
-      // Same tab - snap pill back
-      updatePillPosition(landedIdx);
-    }
-    // Sync active classes
-    syncBottomBar();
-    dragStartX = 0;
+    _isDrag = false;
+  }
+
+  // ── Core: Move to specific tab index (used by both click & drag) ──
+  function moveToTab(idx) {
+    idx = Math.max(0, Math.min(TAB_ORDER.length - 1, idx));
+    activePillIdx = idx; // Update LOCAL state FIRST
+    // Update button active states
+    barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn, i) {
+      btn.classList.toggle('active', i === idx);
+    });
+    // Animate pill to position (with transition)
+    snapPillTo(idx);
+    // Call actual switchTab
+    var targetTab = TAB_ORDER[idx];
+    if (typeof window.switchTab === 'function') window.switchTab(targetTab);
+  }
+
+  function snapPillTo(idx) {
+    if (!pillEl || !barEl) return;
+    var barRect = barEl.getBoundingClientRect();
+    var innerWidth = barRect.width - 16;
+    var tabWidth = innerWidth / TAB_ORDER.length;
+    pillEl.style.transform = 'translateX(' + (idx * tabWidth) + 'px)';
+    pillEl.style.width = tabWidth + 'px';
   }
 
   function syncBottomBar() {
     if (!barEl) return;
+    // Sync from external currentTab to local activePillIdx
+    var externalTab = (typeof window.currentTab !== 'undefined') ? window.currentTab : 'home';
+    var extIdx = TAB_ORDER.indexOf(externalTab);
+    if (extIdx >= 0 && extIdx !== activePillIdx) {
+      activePillIdx = extIdx;
+    }
     barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn) {
-      btn.classList.toggle('active', btn.dataset.pwaTab === (currentTab || 'home'));
+      btn.classList.toggle('active', btn.dataset.pwaTab === (externalTab || 'home'));
     });
-    updatePillPosition();
-  }
-
-  function getPillMetrics() {
-    if (!barEl) return { innerW: 0, tabW: 0 };
-    var innerW = barEl.offsetWidth - 16; // padding 8px*2
-    return { innerW: innerW, tabW: innerW / TAB_ORDER.length };
+    snapPillTo(activePillIdx);
   }
 
   function updatePillPosition(idxOverride) {
     if (!pillEl || !barEl) return;
-    var idx = typeof idxOverride === 'number' ? idxOverride : TAB_ORDER.indexOf(window.currentTab || 'home');
-    if (idx < 0) idx = 0;
-    var m = getPillMetrics();
-    // CSS left:8px = padding-left, so translateX = idx * tabW puts pill at each tab's start
-    pillEl.style.transform = 'translateX(' + (idx * m.tabW) + 'px)';
-    pillEl.style.width = m.tabW + 'px';
+    var idx = typeof idxOverride === 'number' ? idxOverride : activePillIdx;
+    snapPillTo(idx);
   }
   // Recalculate on resize
   window.addEventListener('resize', function() { updatePillPosition(); });
@@ -5529,7 +5541,9 @@ function getExportMonths(startDate,endDate){
     try {
       if (origSwitchTab) origSwitchTab(tab);
     } finally {
-      // Always sync, even if switchTab throws an error
+      // Always sync local state, even if switchTab throws
+      var idx = TAB_ORDER.indexOf(tab);
+      if (idx >= 0) activePillIdx = idx;
       syncBottomBar();
     }
   };
