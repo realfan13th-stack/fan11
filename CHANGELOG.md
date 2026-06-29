@@ -1,5 +1,37 @@
 # 变更日志
 
+## 2026-06-29 20:45 - Tab区修复 + 次级Tab滑动 (fix-tab-and-schedule-bugs)
+
+### 回滚方法
+`git revert HEAD` 或 `git reset --hard HEAD~1`
+
+### 变更列表
+
+1. **底部Tab区位置修复**：`var(--safe-area-bottom)` → `env(safe-area-inset-bottom, 0px)` 标准CSS写法
+2. **删除底部滑动指示器横线**：移除 `.pwa-tab-slider` CSS、JS中slider创建代码、`updateTabSlider()`函数
+3. **底部栏滑动切换**：新增 `initBottomBarSwipe()`，横向滑动超40px切换Tab（iOS风格）
+4. **班级课表不显示Bug修复**：`switchClassTab('group')` 时调用 `renderClassGroupSchedule()`，`personal` 时调用 `renderClassSchedule()`
+5. **次级Tab滑动切换**：通用 `initSubtabSwipe()` 函数，课表区（个人/班级/周视图）和数据区（作息表/课程表/晚托/主题）均支持横向滑动
+6. **删除标题铅笔图标**：移除工作台旁的 `<span class="edit-icon">✎</span>`
+
+---
+
+## 2026-06-29 20:35 - Laifen App 设计风格 UI 优化 (ui-redesign-laifen-style)
+
+### 回滚方法
+`git revert HEAD~1` + `git reset --hard HEAD~2` 或直接 `git reset --hard 3199e17~1`
+
+### 变更列表
+
+1. **Tab区高度扩展**：`56px` → `64px`，按钮最小高度 `44px` → `52px`
+2. **代换课模块宽松排版**：`.ss-sub-item` 内边距 `3px 6px` → `8px 12px`，圆角 `5px` → `8px`，新增轻阴影
+3. **周视图日期选择器单行**：`.weekly-header { flex-wrap: nowrap }`，日期输入区 `margin-left: auto` 靠右
+4. **课表三视图统一**：圆角 `--radius: 10px` → `14px`，阴影统一 `0 2px 8px rgba(0,0,0,0.06)`，表头padding统一
+5. **标题区重设计**：删除竖线 `|`，`top-bar` 背景改 `var(--bg)`，标题字号 `clamp(18px,2vw,22px)`
+6. **全局底色规则**：`.left-panel` 背景改 `var(--bg)`，内容卡片保持白底 `#FFFFFF`
+
+---
+
 ## 2026-06-28 22:30 - 移动端底部导航胶囊化重设计 (bottom-nav-capsule)
 
 ### 回滚方法
