@@ -5243,7 +5243,7 @@ function getExportMonths(startDate,endDate){
 .pwa-bottom-bar {
   display: none;
   position: fixed;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(4px + env(safe-area-inset-bottom, 0px));
   left: 16px;
   right: 16px;
   width: calc(100vw - 32px);
@@ -5324,7 +5324,7 @@ function getExportMonths(startDate,endDate){
   display: block;
 }
 .pwa-bottom-btn.active {
-  color: #1A1A1A;
+  color: #666666;
   font-weight: 600;
 }
 .pwa-bottom-btn.active .pwa-bb-icon {
@@ -5347,7 +5347,7 @@ function getExportMonths(startDate,endDate){
 
 @media (max-width: 768px) {
   .pwa-bottom-bar { display: flex; }
-  body { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+  body { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* ── P2.3: Pull-to-refresh indicator ── */
