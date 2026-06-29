@@ -5455,47 +5455,93 @@ function getExportMonths(startDate,endDate){
       barEl.appendChild(btn);
     });
     document.body.appendChild(barEl);
+
     syncBottomBar();
-    // ── Unified Pointer Events: handles both tap-to-switch and drag-to-swipe ──
-    barEl.addEventListener('pointerdown', onPointerDown);
-    barEl.addEventListener('pointermove', onPointerMove);
+
+    // ── Unified Pointer Events: tap-to-switch + drag-to-swipe with spring snap ──
+    barEl.addEventListener('pointerdown', onPointerDown, { passive: false });
+    barEl.addEventListener('pointermove', onPointerMove, { passive: false });
     barEl.addEventListener('pointerup', onPointerUp);
     barEl.addEventListener('pointercancel', onPointerCancel);
-    // Block long-press context menu (iOS/Android callout)
     barEl.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-    // Suppress stray click events after drag (belt-and-suspenders, since we
-    // removed click listeners, the global haptic listener may still fire)
-    barEl.addEventListener('click', function(e) {
-      if (_suppressedClick) {
-        e.preventDefault();
-        e.stopPropagation();
-        _suppressedClick = false;
-      }
-    }, true);
+    barEl.addEventListener('click', onClickCapture, true);
   }
+
+  // ── Inline Spring Physics Engine (~35 lines, zero deps) ──
+  // Damped harmonic oscillator: acceleration = -stiffness*displacement - damping*velocity
+  function createSpring(mass, stiffness, damping) {
+    return {
+      m: mass || 1, k: stiffness || 200, c: damping || 15,
+      pos: 0, vel: 0, target: 0,
+      active: false, rafId: null,
+      onUpdate: null, onSettle: null,
+
+      setTarget: function(t) { this.target = t; if (!this.active) this.start(); },
+      start: function() { this.active = true; this._step(); },
+      stop: function() { this.active = false; if (this.rafId) cancelAnimationFrame(this.rafId); this.rafId = null; },
+
+      _step: function() {
+        if (!this.active) return;
+        var force = -this.k * (this.pos - this.target) - this.c * this.vel;
+        var acc = force / this.m;
+        this.vel += acc / 60;
+        this.pos += this.vel;
+        // Settle detection
+        if (Math.abs(this.vel) < 0.05 && Math.abs(this.pos - this.target) < 0.05) {
+          this.pos = this.target; this.vel = 0;
+          this.active = false;
+          if (this.onSettle) this.onSettle();
+          return;
+        }
+        if (this.onUpdate) this.onUpdate(this.pos);
+        var self = this;
+        this.rafId = requestAnimationFrame(function() { self._step(); });
+      }
+    };
+  }
+
+  // Global spring instance for pill X-position animation
+  var _pillSpring = createSpring(1, 200, 15);   // mass=1, stiffness=200, damping=15
+  _pillSpring.onUpdate = function(pos) {
+    if (!pillEl || !barEl) return;
+    var barRect = barEl.getBoundingClientRect();
+    var innerWidth = barRect.width - 16;
+    var tabWidth = innerWidth / TAB_ORDER.length;
+    pillEl.style.transform = 'translateX(' + (pos * tabWidth) + 'px)';
+    pillEl.style.width = tabWidth + 'px';
+  };
 
   // ── Drag/tap state ──
   var _ptrDown = false, _ptrStartX = 0, _ptrStartY = 0, _ptrStartIdx = 0;
-  var _isDrag = false, _ptrDownTime = 0, _suppressedClick = false;
+  var _isDrag = false, _suppressedClick = false;
   var _pressedBtn = null;
-  var DRAG_THRESHOLD = 6; // px — lower = more forgiving drag start
+  var _dragPosIdx = 0;              // Current fractional index during drag
+  var _lastPtrTime = 0, _lastPtrX = 0, _dragVel = 0;  // Velocity tracking
+  var DRAG_THRESHOLD = 5;           // px — very forgiving
+  var _rafId = null;                // RAF for drag following
 
   function onPointerDown(e) {
-    // Accept ALL pointer types (touch, pen, mouse) for consistent behavior
     _ptrDown = true;
     _isDrag = false;
     _suppressedClick = false;
     _ptrStartX = e.clientX;
     _ptrStartY = e.clientY;
-    _ptrStartIdx = activePillIdx;
-    _ptrDownTime = Date.now();
+    _ptrStartIdx = _dragPosIdx = activePillIdx;
+    _lastPtrTime = performance.now();
+    _lastPtrX = e.clientX;
+    _dragVel = 0;
+
+    // Kill any running spring animation immediately
+    _pillSpring.stop();
     if (pillEl) pillEl.style.transition = 'none';
-    try { barEl.setPointerCapture && barEl.setPointerCapture(e.pointerId); } catch(_) {}
-    // Visual press feedback
+
+    try { barEl.setPointerCapture(e.pointerId); } catch(_) {}
+
+    // Visual press feedback (only if not dragging yet)
     var el = document.elementFromPoint(e.clientX, e.clientY);
-    _pressedBtn = el && el.closest && el.closest('.pwa-bottom-btn');
+    _pressedBtn = el && el.closest ? el.closest('.pwa-bottom-btn') : null;
     if (_pressedBtn) _pressedBtn.classList.add('pressed');
-    // Prevent default to stop text selection, scroll, and long-press menus
+
     e.preventDefault();
   }
 
@@ -5503,98 +5549,152 @@ function getExportMonths(startDate,endDate){
     if (!_ptrDown || !pillEl || !barEl) return;
     var dx = e.clientX - _ptrStartX;
     var dy = e.clientY - _ptrStartY;
+
     if (!_isDrag) {
       if (Math.abs(dx) < DRAG_THRESHOLD) return;
-      // If vertical movement dominates, user is scrolling the page — bail out
+      // Vertical dominance → page scroll intent → bail
       if (Math.abs(dy) > Math.abs(dx) * 1.5) {
         _ptrDown = false;
         if (_pressedBtn) { _pressedBtn.classList.remove('pressed'); _pressedBtn = null; }
         return;
       }
-      // Drag started — remove press feedback
+      // Drag started
       _isDrag = true;
       if (_pressedBtn) { _pressedBtn.classList.remove('pressed'); _pressedBtn = null; }
     }
+
+    // Track velocity for momentum on release
+    var now = performance.now();
+    var dt = Math.max(now - _lastPtrTime, 1);
+    _dragVel = (e.clientX - _lastPtrX) / dt * 1000;  // px per second
+    _lastPtrTime = now;
+    _lastPtrX = e.clientX;
+
+    // Calculate target position in index units
     var barRect = barEl.getBoundingClientRect();
-    var innerWidth = barRect.width - 16; // padding 8*2
+    var innerWidth = barRect.width - 16;
     var tabWidth = innerWidth / TAB_ORDER.length;
-    var rawIdx = _ptrStartIdx + dx / tabWidth;
-    var clampedIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, rawIdx));
-    // Move pill to finger position
-    pillEl.style.transform = 'translateX(' + (clampedIdx * tabWidth) + 'px)';
-    pillEl.style.width = tabWidth + 'px';
+
+    _dragPosIdx = _ptrStartIdx + dx / tabWidth;
+    _dragPosIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, _dragPosIdx));
+
+    // Move pill via RAF for smooth 60fps tracking
+    schedulePillUpdate(_dragPosIdx);
+
     // Highlight nearest button
-    var nearestIdx = Math.round(clampedIdx);
+    var nearestIdx = Math.round(_dragPosIdx);
     barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn, i) {
       btn.classList.toggle('active', i === nearestIdx);
     });
+
     e.preventDefault();
+  }
+
+  // RAF-based DOM write during drag (avoids layout thrashing)
+  function schedulePillUpdate(idx) {
+    if (_rafId !== null) return; // already queued
+    _rafId = requestAnimationFrame(function() {
+      _rafId = null;
+      if (!pillEl || !barEl) return;
+      var br = barEl.getBoundingClientRect();
+      var iw = br.width - 16;
+      var tw = iw / TAB_ORDER.length;
+      pillEl.style.transform = 'translateX(' + (idx * tw) + 'px)';
+      pillEl.style.width = tw + 'px';
+    });
   }
 
   function onPointerUp(e) {
     if (!_ptrDown) return;
     _ptrDown = false;
+    if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
     if (_pressedBtn) { _pressedBtn.classList.remove('pressed'); _pressedBtn = null; }
-    if (pillEl) pillEl.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)';
+    _suppressedClick = true;
+
     if (_isDrag) {
-      // ── Drag end: snap to nearest tab ──
-      _suppressedClick = true; // kill the click event browser will fire
-      var dx = e.clientX - _ptrStartX;
-      var barRect = barEl.getBoundingClientRect();
-      var innerWidth = barRect.width - 16;
-      var tabWidth = innerWidth / TAB_ORDER.length;
-      var landedIdx = Math.round(_ptrStartIdx + dx / tabWidth);
+      // ── Drag end: spring-snap to nearest tab with momentum ──
+      var landedIdx = Math.round(_dragPosIdx);
       landedIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, landedIdx));
-      moveToTab(landedIdx);
+      springSnapToTab(landedIdx);
     } else {
-      // ── Tap: find which button is under the finger and switch ──
-      _suppressedClick = true; // we handle it, suppress browser click
+      // ── Tap: find button under finger and switch ──
       var el = document.elementFromPoint(e.clientX, e.clientY);
-      var btn = el && el.closest && el.closest('.pwa-bottom-btn');
+      var btn = el && el.closest ? el.closest('.pwa-bottom-btn') : null;
       if (btn) {
         hapticTap();
-        // Bounce animation
-        btn.classList.remove('bouncing');
-        void btn.offsetWidth;
+        btn.classList.remove('bouncing'); void btn.offsetWidth;
         btn.classList.add('bouncing');
         setTimeout(function() { btn.classList.remove('bouncing'); }, 300);
-        var newIdx = parseInt(btn.dataset.idx, 10);
-        moveToTab(newIdx);
+        springSnapToTab(parseInt(btn.dataset.idx, 10));
+      } else {
+        // Tapped outside buttons → restore current position
+        springSnapToTab(activePillIdx);
       }
     }
     _isDrag = false;
   }
 
-  function onPointerCancel(e) {
+  function onPointerCancel() {
     _ptrDown = false;
     _isDrag = false;
+    if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
     if (_pressedBtn) { _pressedBtn.classList.remove('pressed'); _pressedBtn = null; }
-    if (pillEl) pillEl.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)';
-    snapPillTo(activePillIdx);
+    springSnapToTab(activePillIdx);  // Spring back to current tab
   }
 
-  // ── Core: Move to specific tab index (used by both click & drag) ──
-  function moveToTab(idx) {
-    idx = Math.max(0, Math.min(TAB_ORDER.length - 1, idx));
-    activePillIdx = idx; // Update LOCAL state FIRST
-    // Update button active states
+  function onClickCapture(e) {
+    if (_suppressedClick) {
+      e.preventDefault(); e.stopPropagation();
+      _suppressedClick = false;
+    }
+  }
+
+  // ── Spring-snap pill to target index (with optional initial velocity) ──
+  function springSnapToTab(targetIdx) {
+    targetIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, targetIdx));
+    activePillIdx = targetIdx;
+
+    // Update button states immediately
     barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn, i) {
-      btn.classList.toggle('active', i === idx);
+      btn.classList.toggle('active', i === targetIdx);
     });
-    // Animate pill to position (with transition)
-    snapPillTo(idx);
-    // Call actual switchTab
-    var targetTab = TAB_ORDER[idx];
-    if (typeof window.switchTab === 'function') window.switchTab(targetTab);
+
+    // Configure and launch spring from current position toward integer target
+    _pillSpring.stop();
+    _pillSpring.pos = _dragPosIdx;
+    _pillSpring.vel = _isDrag ? _dragVel * 0.008 : 0;  // carry some momentum
+    _pillSpring.setTarget(targetIdx);
+    _pillSpring.onSettle = function() {
+      var tabName = TAB_ORDER[targetIdx];
+      if (typeof window.switchTab === 'function') window.switchTab(tabName);
+    };
   }
 
+  // ── Immediate jump (for external sync like switchTab hook or resize) ──
   function snapPillTo(idx) {
     if (!pillEl || !barEl) return;
+    _pillSpring.stop();
+    _dragPosIdx = idx;
+    _pillSpring.pos = idx;
+    _pillSpring.target = idx;
+    _pillSpring.vel = 0;
     var barRect = barEl.getBoundingClientRect();
     var innerWidth = barRect.width - 16;
     var tabWidth = innerWidth / TAB_ORDER.length;
     pillEl.style.transform = 'translateX(' + (idx * tabWidth) + 'px)';
     pillEl.style.width = tabWidth + 'px';
+  }
+
+  // External moveToTab alias (used by non-drag callers wanting immediate switch)
+  function moveToTab(idx) {
+    idx = Math.max(0, Math.min(TAB_ORDER.length - 1, idx));
+    activePillIdx = idx;
+    barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn, i) {
+      btn.classList.toggle('active', i === idx);
+    });
+    snapPillTo(idx);
+    var tabName = TAB_ORDER[idx];
+    if (typeof window.switchTab === 'function') window.switchTab(tabName);
   }
 
   function syncBottomBar() {
