@@ -11,6 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#4E648A">
 <meta name="description" content="教师个人作息管理与课表工作台">
+<link rel="manifest" href="manifest.json">
 <!-- All libraries embedded inline — single file, no external dependencies -->
 <!-- html2canvas v1.4.1 + SheetJS xlsx.full.min -->
 <!-- html2canvas v1.4.1 (inline) -->
@@ -127,7 +128,8 @@ body {
    顶部导航
    ============================================================ */
 .top-bar {
-  background:#FFFFFF; color:#1D1D1F; padding:10px clamp(8px,2vw,24px);
+  background:#FFFFFF; color:#1D1D1F;
+  padding:calc(10px + var(--safe-area-top, 0px)) clamp(8px,2vw,24px) 10px clamp(8px,2vw,24px);
   display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
   border-bottom:0.5px solid rgba(0,0,0,0.08);
 }
@@ -706,7 +708,7 @@ body {
   }
   /* -- Mobile top bar tweaks -- */
   .top-bar {
-    padding: 12px 16px;
+    padding: calc(12px + var(--safe-area-top, 0px)) 16px 12px 16px;
     gap: 10px;
   }
   .title-edit {
@@ -1745,10 +1747,22 @@ function toMin(t){if(!t)return 0;const p=t.split(":").map(Number);return p[0]*60
 function fmtTime(t){if(!t)return"";var p=t.split(":");return p.length>=2?p[0]+":"+p[1]:t;}
 
 // ============================================================
-// 2. Data Load/Save
+// 2. Data Load/Save  (IndexedDB primary, localStorage backup)
 // ============================================================
+// -- IndexedDB helper (PWA-safe persistent storage) --
+var _idb=null;
+function _idbOpen(){return new Promise(function(res,rej){if(_idb){res(_idb);return;}var r=indexedDB.open("schedule_wb",1);r.onupgradeneeded=function(e){e.target.result.createObjectStore("kv",{keyPath:"k"});};r.onsuccess=function(e){_idb=e.target.result;res(_idb);};r.onerror=function(e){rej(e);};});}
+function dbGet(k){return _idbOpen().then(function(db){return new Promise(function(res,rej){var t=db.transaction("kv","readonly");var r=t.objectStore("kv").get(k);r.onsuccess=function(){res(r.result?r.result.v:null);};r.onerror=function(){rej(r.error);};});}).catch(function(){return Promise.resolve(null);});}
+function dbSet(k,v){return _idbOpen().then(function(db){return new Promise(function(res,rej){var t=db.transaction("kv","readwrite");t.objectStore("kv").put({k:k,v:v});t.oncomplete=function(){res();};t.onerror=function(){rej(t.error);};});}).catch(function(){});}
+// Preload from IndexedDB — runs async at script start, syncs to localStorage
+var _dbPreloaded=false,_dbData=null;
+dbGet("scheduleAppData_2").then(function(data){
+  if(data){try{var d=JSON.parse(data);if(d&&d.schedules){_dbPreloaded=true;_dbData=data;try{localStorage.setItem("scheduleAppData_2",data);}catch(e){}}}catch(e){}}
+}).catch(function(){});
 function loadData(){
-  try{var d=localStorage.getItem("scheduleAppData_2");if(d){appData=JSON.parse(d);}else{appData=JSON.parse(JSON.stringify(DEFAULT_DATA));}}catch(e){appData=JSON.parse(JSON.stringify(DEFAULT_DATA));}
+  var d=null;try{d=localStorage.getItem("scheduleAppData_2");}catch(e){}
+  if(!d&&_dbPreloaded&&_dbData){d=_dbData;try{localStorage.setItem("scheduleAppData_2",_dbData);}catch(e){}}
+  try{if(d){appData=JSON.parse(d);}else{appData=JSON.parse(JSON.stringify(DEFAULT_DATA));}}catch(e){appData=JSON.parse(JSON.stringify(DEFAULT_DATA));}
   if(!appData.semester)appData.semester=JSON.parse(JSON.stringify(DEFAULT_DATA.semester));
   if(!appData.semester.start)appData.semester.start=DEFAULT_DATA.semester.start;
   if(!appData.semester.end)appData.semester.end=DEFAULT_DATA.semester.end;
@@ -1894,7 +1908,7 @@ function initExportTitles(){
   el=document.getElementById("exportTitleTextAfterSchool");if(el)el.textContent=appData.exportTitles.afterSchool||EXPORT_TITLE_DEFAULTS.afterSchool;
   el=document.getElementById("exportTitleTextClassGroupSchedule");if(el)el.textContent=appData.exportTitles.classGroupSchedule||EXPORT_TITLE_DEFAULTS.classGroupSchedule;
 }
-function saveData(){appData._theme=currentTheme;appData.scheduleType=currentScheduleType;try{localStorage.setItem("scheduleAppData_2",JSON.stringify(appData));}catch(e){}}
+function saveData(){appData._theme=currentTheme;appData.scheduleType=currentScheduleType;var json=JSON.stringify(appData);dbSet("scheduleAppData_2",json);try{localStorage.setItem("scheduleAppData_2",json);}catch(e){}}
 // ============================================================
 // 3. Themes
 // ============================================================
@@ -2008,11 +2022,12 @@ function renderSchedule(){
 function switchEditSchedule(m){
   editScheduleMode=m;
   document.querySelectorAll(".season-toggle button").forEach(b=>b.classList.toggle("active",b.dataset.season===m));
+  if(m!==currentScheduleType){setScheduleType(m);}
   renderScheduleEdit();
 }
 function renderScheduleEdit(){
   const label=document.getElementById("editScheduleLabel");
-  label.textContent=(editScheduleMode==="summer"?"\u590f\u4ee4\u65f6":"\u51ac\u4ee4\u65f6");
+  label.innerHTML=(editScheduleMode==="summer"?"\u590f\u4ee4\u65f6":"\u51ac\u4ee4\u65f6")+"<span style=\"color:#86868B;margin-left:6px;font-size:clamp(10px,0.9vw,11px);\">\u5f53\u524d\u4e3b\u9875\u663e\u793a\u4e3a"+(currentScheduleType==="summer"?"\u590f\u4ee4\u65f6":"\u51ac\u4ee4\u65f6")+"</span>";
   const s=appData.schedules[editScheduleMode];
   if(!s||!s.sections){document.getElementById("scheduleEditBody").innerHTML="";return;}
   let html="";
@@ -5255,7 +5270,7 @@ function getExportMonths(startDate,endDate){
   color: #fff;
   background: var(--accent, #597AB5);
   box-shadow: 0 2px 8px rgba(89,122,181,0.35);
-  padding: 4px 28px;
+  padding: 4px 38px;
   font-weight: 600;
 }
 .pwa-bottom-btn.active .pwa-bb-icon {
@@ -5488,239 +5503,6 @@ function getExportMonths(startDate,endDate){
   initSwipeNav();
   initPullToRefresh();
   initHapticGlobal();
-})();
-</script>
-<!-- ===== P3: Push Notifications ===== -->
-<style id="pwa-notify-styles">
-.pwa-notify-toast {
-  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-  background: var(--header, #4E648A); color: #fff; padding: 12px 20px;
-  border-radius: 12px; font-size: 14px; z-index: 100001;
-  box-shadow: 0 4px 20px rgba(0,0,0,.2); font-family: system-ui, sans-serif;
-  animation: notifyIn .35s cubic-bezier(.16,1,.3,1);
-  display: flex; align-items: center; gap: 12px; white-space: nowrap;
-}
-.pwa-notify-toast.fadeout { animation: notifyOut .3s ease forwards; }
-@keyframes notifyIn { from { opacity:0; transform:translate(-50%,-20px); } to { opacity:1; transform:translate(-50%,0); } }
-@keyframes notifyOut { to { opacity:0; transform:translate(-50%,-20px); } }
-</style>
-<script>
-(function initNotifications() {
-  'use strict';
-  var notifyEnabled = false;
-  var notifyAdvanceMin = 2;    // minutes before class
-  var notifySilentStart = 18;  // 18:00
-  var notifySilentEnd = 7;     // 07:00
-  var notifyTimer = null;
-  var lastNotifiedKey = null;  // Prevent duplicate notifications
-  var permissionRequested = false;
-
-  // Load preferences from localStorage
-  try {
-    var prefs = JSON.parse(localStorage.getItem('pwa_notify_prefs') || '{}');
-    if (typeof prefs.enabled === 'boolean') notifyEnabled = prefs.enabled;
-    if (typeof prefs.advance === 'number') notifyAdvanceMin = prefs.advance;
-    if (typeof prefs.silentStart === 'number') notifySilentStart = prefs.silentStart;
-    if (typeof prefs.silentEnd === 'number') notifySilentEnd = prefs.silentEnd;
-  } catch(e) {}
-
-  function savePrefs() {
-    try {
-      localStorage.setItem('pwa_notify_prefs', JSON.stringify({
-        enabled: notifyEnabled, advance: notifyAdvanceMin,
-        silentStart: notifySilentStart, silentEnd: notifySilentEnd
-      }));
-    } catch(e) {}
-  }
-
-  // ── P3.1: Request Notification Permission ──
-  function requestNotifyPermission() {
-    if (!('Notification' in window)) {
-      console.log('[Notify] Notification API not available');
-      return;
-    }
-    if (Notification.permission === 'granted') {
-      notifyEnabled = true; savePrefs();
-      console.log('[Notify] Permission already granted');
-      return;
-    }
-    if (Notification.permission === 'denied') {
-      notifyEnabled = false; savePrefs();
-      console.log('[Notify] Permission denied');
-      return;
-    }
-    // 'default' — request gently after first user interaction
-    if (permissionRequested) return;
-    permissionRequested = true;
-    showNotifyToast('🔔 开启上课提醒？', [
-      { text: '开启', action: function() {
-        Notification.requestPermission().then(function(perm) {
-          if (perm === 'granted') { notifyEnabled = true; savePrefs(); showNotifyToast('已开启上课提醒', null); }
-          else { notifyEnabled = false; savePrefs(); }
-        });
-      }},
-      { text: '暂不', action: function() { notifyEnabled = false; savePrefs(); } }
-    ]);
-  }
-
-  function showNotifyToast(msg, buttons) {
-    var existing = document.querySelector('.pwa-notify-toast');
-    if (existing) existing.remove();
-    var toast = document.createElement('div');
-    toast.className = 'pwa-notify-toast';
-    toast.innerHTML = '<span>' + msg + '</span>';
-    if (buttons && buttons.length) {
-      var btnGroup = document.createElement('div');
-      btnGroup.style.cssText = 'display:flex;gap:8px;';
-      buttons.forEach(function(b) {
-        var btn = document.createElement('button');
-        btn.textContent = b.text;
-        btn.style.cssText = 'background:rgba(255,255,255,.2);color:#fff;border:none;'
-          + 'padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;';
-        btn.addEventListener('click', function() { b.action(); toast.remove(); });
-        btnGroup.appendChild(btn);
-      });
-      toast.appendChild(btnGroup);
-    } else {
-      setTimeout(function() { toast.classList.add('fadeout');
-        setTimeout(function() { if(toast.parentNode) toast.remove(); }, 300);
-      }, 2500);
-    }
-    document.body.appendChild(toast);
-  }
-
-  // ── P3.2: Schedule Class Reminder ──
-  function scheduleNextNotification() {
-    if (notifyTimer) { clearTimeout(notifyTimer); notifyTimer = null; }
-    if (!notifyEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
-    if (typeof appData === 'undefined' || typeof getSchedule !== 'function') return;
-
-    var now = new Date();
-    var dayOfWeek = now.getDay(); // 0=Sun, 6=Sat
-    var currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-    // ── P3.5: Silent hours check ──
-    var isSilent = false;
-    if (notifySilentStart > notifySilentEnd) {
-      // e.g., 18:00 to 07:00 — crosses midnight
-      isSilent = currentMinutes >= notifySilentStart * 60 || currentMinutes < notifySilentEnd * 60;
-    }
-    if (isSilent) {
-      // Re-check after silent period ends
-      var nextCheckMs;
-      if (currentMinutes >= notifySilentStart * 60) {
-        // After silent start, wait until silent end tomorrow
-        nextCheckMs = ((24 - now.getHours() + notifySilentEnd) * 60 - now.getMinutes()) * 60 * 1000;
-      } else {
-        // Before silent end, wait until silent end
-        nextCheckMs = (notifySilentEnd * 60 - currentMinutes) * 60 * 1000;
-      }
-      notifyTimer = setTimeout(scheduleNextNotification, Math.max(nextCheckMs, 60000));
-      return;
-    }
-
-    // Weekend check
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      notifyTimer = setTimeout(scheduleNextNotification, 30 * 60 * 1000); // Check again in 30 min
-      return;
-    }
-
-    // Get schedule and find upcoming class
-    var s = getSchedule();
-    if (!s || !s.sections) { notifyTimer = setTimeout(scheduleNextNotification, 60000); return; }
-
-    var upcomingItem = null, upcomingStart = Infinity;
-    s.sections.forEach(function(sec) {
-      sec.items.forEach(function(it) {
-        if (it.category !== 'class' || !it.start) return;
-        var startMin = (typeof toMin === 'function') ? toMin(it.start) : 0;
-        if (startMin > currentMinutes && startMin < upcomingStart) {
-          upcomingStart = startMin;
-          upcomingItem = it;
-        }
-      });
-    });
-
-    if (!upcomingItem) {
-      // No more classes today — schedule recheck in 30 min (or next morning)
-      var msUntilMidnight = ((24 - now.getHours()) * 60 - now.getMinutes()) * 60 * 1000;
-      notifyTimer = setTimeout(scheduleNextNotification, Math.min(msUntilMidnight + 60000, 8 * 60 * 60 * 1000));
-      return;
-    }
-
-    // Calculate delay until notification time (advanceMin before class)
-    var notifyMin = upcomingStart - notifyAdvanceMin;
-    var delayMs = (notifyMin - currentMinutes) * 60 * 1000;
-    if (delayMs < 0) delayMs = 0; // Class already started or about to start
-
-    var notifyKey = upcomingItem.name + '|' + upcomingItem.start;
-    if (notifyKey === lastNotifiedKey && delayMs < 60000) {
-      // Already notified for this class, skip
-      notifyTimer = setTimeout(scheduleNextNotification, 30000);
-      return;
-    }
-
-    notifyTimer = setTimeout(function() {
-      if (document.visibilityState === 'hidden' || document.hidden) {
-        // Page in background — use Notification
-        try {
-          new Notification('上课提醒', {
-            body: upcomingItem.name + ' 将在 ' + notifyAdvanceMin + ' 分钟后开始 (' + upcomingItem.start + ')',
-            icon: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#4E648A"/><path d="M50 22a4 4 0 0 0-4 4v4c-8.84 0-16 7.16-16 16v10l-4 8h48l-4-8V46c0-8.84-7.16-16-16-16v-4a4 4 0 0 0-4-4z" fill="white"/><path d="M58 74a8 8 0 1 1-16 0" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>'),
-            tag: 'class-reminder',
-            requireInteraction: false,
-            silent: false
-          });
-        } catch(e) { console.warn('[Notify] Failed:', e); }
-      }
-      lastNotifiedKey = notifyKey;
-      // Schedule next check (after this class starts)
-      var afterClassMs = (upcomingStart - currentMinutes + 5) * 60 * 1000;
-      notifyTimer = setTimeout(scheduleNextNotification, Math.max(afterClassMs, 30000));
-    }, Math.max(delayMs, 1000));
-  }
-
-  // ── P3.3: Season change notification ──
-  var origSetScheduleType = window.setScheduleType;
-  window.setScheduleType = function(type) {
-    if (origSetScheduleType) origSetScheduleType(type);
-    if (!notifyEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
-    try {
-      var label = type === 'summer' ? '夏令时' : '冬令时';
-      new Notification('作息切换', {
-        body: '已切换至 ' + label + ' 作息表',
-        tag: 'schedule-change',
-        requireInteraction: false
-      });
-    } catch(e) {}
-    // Reschedule notifications
-    scheduleNextNotification();
-  };
-
-  // ── P3.4: Settings integration ──
-  window.getNotifySettings = function() {
-    return { enabled: notifyEnabled, advance: notifyAdvanceMin, silentStart: notifySilentStart, silentEnd: notifySilentEnd };
-  };
-  window.setNotifySettings = function(settings) {
-    if (typeof settings.enabled === 'boolean') notifyEnabled = settings.enabled;
-    if (typeof settings.advance === 'number') notifyAdvanceMin = settings.advance;
-    if (typeof settings.silentStart === 'number') notifySilentStart = settings.silentStart;
-    if (typeof settings.silentEnd === 'number') notifySilentEnd = settings.silentEnd;
-    savePrefs();
-    scheduleNextNotification();
-  };
-
-  // ── Init P3 ──
-  // Delay permission request to avoid overwhelming user on first load
-  setTimeout(requestNotifyPermission, 5000);
-  // Start notification scheduler
-  if (notifyEnabled && 'Notification' in window && Notification.permission === 'granted') {
-    scheduleNextNotification();
-  }
-  // Re-evaluate when page becomes visible
-  document.addEventListener('visibilitychange', function() {
-    if (!document.hidden && notifyEnabled) scheduleNextNotification();
-  });
 })();
 </script>
 </body>

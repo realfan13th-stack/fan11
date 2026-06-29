@@ -1,0 +1,26 @@
+{
+  "name": "教师作息工作台",
+  "short_name": "工作台",
+  "description": "教师个人作息管理与课表工作台",
+  "start_url": "/schedule-workbench/schedule_v103.html",
+  "scope": "/schedule-workbench/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F9FCF6",
+  "theme_color": "#4E648A",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='36' fill='%234E648A'/><text x='96' y='116' font-family='system-ui,sans-serif' font-size='80' font-weight='700' fill='white' text-anchor='middle'>📅</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%234E648A'/><text x='256' y='308' font-family='system-ui,sans-serif' font-size='220' font-weight='700' fill='white' text-anchor='middle'>📅</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
