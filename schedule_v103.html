@@ -1272,7 +1272,6 @@ body {
   <div style="display:flex;align-items:center;gap:8px;">
     <span class="title-edit" id="titleDisplay" onclick="startTitleEdit()">
       <span id="titleText">工作台</span>
-      <span class="edit-icon">&#9998;</span>
     </span>
     <input type="text" class="title-input" id="titleInput"
            style="display:none;" onblur="saveTitle()"
@@ -1978,7 +1977,8 @@ function switchClassTab(tab){
   document.querySelectorAll(".class-subtab").forEach(b=>b.classList.toggle("active",b.dataset.csub===tab));
   document.querySelectorAll(".class-subpanel").forEach(p=>p.classList.toggle("active",p.id==="class"+(tab==="personal"?"Personal":tab==="group"?"Group":"Weekly")));
   if(tab==="weekly"){weeklyWeekOffset=0;renderWeekView();}
-  else weeklyWeekOffset=0;
+  else if(tab==="group"){weeklyWeekOffset=0;if(typeof renderClassGroupSchedule==="function")renderClassGroupSchedule();}
+  else {weeklyWeekOffset=0;if(typeof renderClassSchedule==="function")renderClassSchedule();}
 }
 var currentClassTab="personal";
 function setScheduleType(type){
@@ -5218,7 +5218,7 @@ function getExportMonths(startDate,endDate){
 .pwa-bottom-bar {
   display: none;
   position: fixed;
-  bottom: calc(12px + var(--safe-area-bottom));
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   left: 16px;
   right: 16px;
   width: calc(100vw - 32px);
@@ -5233,17 +5233,6 @@ function getExportMonths(startDate,endDate){
   justify-content: space-evenly;
   align-items: center;
   gap: 6px;
-  position: relative;
-}
-/* 滑动指示器 */
-.pwa-tab-slider {
-  position: absolute;
-  bottom: 6px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--accent, #597AB5);
-  transition: left 0.3s cubic-bezier(.4,0,.2,1), width 0.3s cubic-bezier(.4,0,.2,1);
-  pointer-events: none;
 }
 .pwa-bottom-btn {
   display: flex;
@@ -5297,7 +5286,7 @@ function getExportMonths(startDate,endDate){
 
 @media (max-width: 768px) {
   .pwa-bottom-bar { display: flex; }
-  body { padding-bottom: calc(78px + var(--safe-area-bottom)); }
+  body { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* ── P2.3: Pull-to-refresh indicator ── */
@@ -5387,10 +5376,6 @@ function getExportMonths(startDate,endDate){
     barEl = document.createElement('nav');
     barEl.className = 'pwa-bottom-bar';
     barEl.setAttribute('aria-label', '底部导航');
-    // Create tab slider indicator
-    var slider = document.createElement('div');
-    slider.className = 'pwa-tab-slider';
-    barEl.appendChild(slider);
     TAB_ORDER.forEach(function(tab) {
       var btn = document.createElement('button');
       btn.className = 'pwa-bottom-btn';
@@ -5404,6 +5389,8 @@ function getExportMonths(startDate,endDate){
     });
     document.body.appendChild(barEl);
     syncBottomBar();
+    // Attach touch swipe on bottom bar itself
+    initBottomBarSwipe();
   }
 
   function syncBottomBar() {
@@ -5411,19 +5398,32 @@ function getExportMonths(startDate,endDate){
     barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn) {
       btn.classList.toggle('active', btn.dataset.pwaTab === (currentTab || 'home'));
     });
-    // Update slider position
-    updateTabSlider();
   }
 
-  function updateTabSlider() {
+  // Bottom bar swipe to switch tabs (iOS-style)
+  function initBottomBarSwipe() {
     if (!barEl) return;
-    var slider = barEl.querySelector('.pwa-tab-slider');
-    if (!slider) return;
-    var activeBtn = barEl.querySelector('.pwa-bottom-btn.active');
-    if (activeBtn) {
-      slider.style.left = activeBtn.offsetLeft + 'px';
-      slider.style.width = activeBtn.offsetWidth + 'px';
-    }
+    var bbStartX = 0, bbStartY = 0;
+    barEl.addEventListener('touchstart', function(e) {
+      if (!e.touches || e.touches.length !== 1) return;
+      bbStartX = e.touches[0].clientX;
+      bbStartY = e.touches[0].clientY;
+    }, { passive: true });
+    barEl.addEventListener('touchend', function(e) {
+      if (!e.changedTouches || e.changedTouches.length !== 1) return;
+      var dx = e.changedTouches[0].clientX - bbStartX;
+      var dy = e.changedTouches[0].clientY - bbStartY;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+      var curIdx = TAB_ORDER.indexOf(window.currentTab || 'home');
+      if (curIdx < 0) return;
+      if (dx > 0 && curIdx > 0) {
+        hapticTap();
+        if (typeof window.switchTab === 'function') window.switchTab(TAB_ORDER[curIdx - 1]);
+      } else if (dx < 0 && curIdx < TAB_ORDER.length - 1) {
+        hapticTap();
+        if (typeof window.switchTab === 'function') window.switchTab(TAB_ORDER[curIdx + 1]);
+      }
+    });
   }
 
   // Hook into existing switchTab to sync bottom bar
@@ -5529,11 +5529,41 @@ function getExportMonths(startDate,endDate){
     }, true);
   }
 
+  // ── Subtab swipe (class subtabs & DM subtabs) ──
+  function initSubtabSwipe(containerId, tabOrder, switchFn) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var startX = 0, startY = 0;
+    container.addEventListener('touchstart', function(e) {
+      if (!e.touches || e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+    container.addEventListener('touchend', function(e) {
+      if (!e.changedTouches || e.changedTouches.length !== 1) return;
+      var dx = e.changedTouches[0].clientX - startX;
+      var dy = e.changedTouches[0].clientY - startY;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+      var curIdx = tabOrder.indexOf(window.currentClassTab || window.currentDM || tabOrder[0]);
+      if (curIdx < 0) curIdx = 0;
+      if (dx > 0 && curIdx > 0) {
+        hapticTap();
+        switchFn(tabOrder[curIdx - 1]);
+      } else if (dx < 0 && curIdx < tabOrder.length - 1) {
+        hapticTap();
+        switchFn(tabOrder[curIdx + 1]);
+      }
+    });
+  }
+
   // ── Init P2 ──
   createBottomBar();
   initSwipeNav();
   initPullToRefresh();
   initHapticGlobal();
+  // Init subtab swipes after DOM ready
+  initSubtabSwipe('classSubtabs', ['personal','group','weekly'], function(tab) { if(typeof switchClassTab==='function')switchClassTab(tab); });
+  initSubtabSwipe('dmSubtabs', ['schedule','class','afterschool','theme'], function(dm) { if(typeof switchDM==='function')switchDM(dm); });
 })();
 </script>
 </body>
