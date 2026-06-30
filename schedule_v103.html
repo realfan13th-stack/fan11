@@ -2336,7 +2336,7 @@ function getWeekDates(offset){
     var key=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
     dates[dayNames[i]]=key;
   }
-  dates.monday=monday;
+  dates.monday=monday.getFullYear()+"-"+String(monday.getMonth()+1).padStart(2,"0")+"-"+String(monday.getDate()).padStart(2,"0");
   return dates;
 }
 function getCellDotHTML(dayName,itemId,globalIdx){
@@ -2408,10 +2408,12 @@ function renderWeekView(){
     var as=appData.afterSchool||{};
     if(as.weekNotes&&as.weekNotes[wkKey])noteFromAfterSchool=as.weekNotes[wkKey];
   }
-  var weekDisplay=noteFromAfterSchool||('第'+weekNum);
+  var weekDisplay=noteFromAfterSchool||('第'+weekNum+'周');
+  var hasZhounote=noteFromAfterSchool&&noteFromAfterSchool.indexOf('周')!==-1;
   var headerHtml='<div class="week-title-area" style="cursor:pointer" onclick="openWeekNotePopup(\''+wkKey+'\',\''+(weekNum||'')+'\')" title="点击编辑周备注">'
-    +'<span class="week-title-num">'+escapeHTML(weekDisplay)+'</span>'
-    +'<span class="week-title-suffix">周</span></div>';
+    +'<span class="week-title-num">'+escapeHTML(weekDisplay)+'</span>';
+  if(!hasZhounote)headerHtml+='<span class="week-title-suffix">周</span>';
+  headerHtml+='</div>';
   headerHtml+='<div class="week-date-row">';
   for(var di=0;di<days.length;di++){
     var dayName=days[di];
