@@ -1,5 +1,21 @@
 # 变更日志
 
+## 2026-06-30 11:15 - 关闭 Service Worker + Tab栏下移 + 文字调浅 + resize弹簧修复 (pwa-3)
+
+### 变更列表
+1. **关闭 Service Worker 缓存**：
+   - `SW_ENABLED = false`，不再注册新 SW
+   - 旧 SW 在版本变更时自动清理（`sw_version` 版本检测 + `unregister`）
+   - `APP_VERSION` → `v103-pwa-3`
+   - 如需重新启用：将 `SW_ENABLED` 改为 `true` 并升版本号即可
+2. **Tab栏位置贴底**：`bottom: 12px` → `2px`，`body padding: 78px` → `74px`（8px呼吸空间）
+3. **文字颜色调浅**：active 状态文字 `#666`（浅黑），图标保持 `#1A1A1A`（深色）
+4. **resize 打断弹簧修复**：
+   - 根因：移动端 Safari 地址栏显隐触发 resize → `snapPillTo()` → `_pillSpring.stop()` 中途杀死动画
+   - 修复：添加 `_resizePending` 守卫，拖拽/弹簧进行中 → 跳过 resize；弹簧 settle 后自动处理延迟的 resize
+
+---
+
 ## 2026-06-29 22:11 - 药丸彻底重写 + PWA 404修复 (pill-rewrite-pwa-fix)
 
 ### 回滚方法

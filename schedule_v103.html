@@ -4901,7 +4901,8 @@ function getExportMonths(startDate,endDate){
 <script>
 (function initPWA() {
   'use strict';
-  var APP_VERSION = 'v103-pwa-2';
+  var APP_VERSION = 'v103-pwa-3';
+  var SW_ENABLED = false;  // Service Worker disabled — no cache, always fetch latest
   var CACHE_NAME = 'schedule-workbench-' + APP_VERSION;
   // Self-healing: clear old caches & unregister old SWs when version changes
   try {
@@ -4985,15 +4986,19 @@ function getExportMonths(startDate,endDate){
 
   // ── P0.3: Register Service Worker (inline via Blob URL) ──
   function registerSW() {
-    // Aggressively unregister ALL old service workers first.
-    // The old SW used Cache-First which locks users into stale content.
+    // Always unregister old SWs first (cleanup)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(regs) {
         regs.forEach(function(reg) {
-          console.log('[PWA] Unregistering old SW:', reg.scope);
+          console.log('[PWA] Unregistering SW:', reg.scope);
           reg.unregister();
         });
       }).catch(function(){});
+    }
+    // SW disabled — skip registration, just log
+    if (!SW_ENABLED) {
+      console.log('[PWA] Service Worker disabled — running without cache');
+      return;
     }
     var swCode = [
       'var CACHE_NAME = "' + CACHE_NAME + '";',
