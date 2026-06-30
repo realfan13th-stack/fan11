@@ -1140,11 +1140,11 @@ body {
 .wk-date-th.today-col .wdt-day { color:#16A34A; }
 .wk-date-th .wdt-today {
   display:block; font-size:clamp(10px,1vw,12px); font-weight:500; color:#16A34A;
-  line-height:1.2;
+  line-height:1.2; margin-top:3px;
 }
 .wk-date-th .wdt-date {
   display:block; font-size:clamp(11px,1.15vw,13px); font-weight:500;
-  color:var(--text); opacity:0.65; margin-top:5px;
+  color:var(--text); opacity:0.65; margin-top:3px;
 }
 /* 今天状态下隐藏日期 */
 .wk-date-th.today-col .wdt-date { display:none; }
@@ -1162,25 +1162,28 @@ tr.wk-section-first td:last-child { border-top-right-radius:12px; }
 tr.wk-section-last td:first-child { border-bottom-left-radius:12px; }
 tr.wk-section-last td:last-child { border-bottom-right-radius:12px; }
 
-/* 每个section内部所有行的td都是白底 */
+/* 每个section内部所有行的td都是白底（不用!important，靠选择器优先级即可） */
 tr.wk-section-first td,
 tr.wk-section-last td,
 tr:not(.wk-section-first):not(.wk-section-last) td {
-  background:#FFFFFF !important;
+  background:#FFFFFF;
 }
 
-/* section之间的间隙：用margin模拟（通过tbody分组或伪元素）*/
-/* 移动端：上下8px；桌面端：上下16px */
-tr.wk-section-last { margin-bottom:clamp(8px,1.5vw,16px); }
+/* 段间间隙：用透明border-bottom制造（tr不支持margin，此法有效）*/
+/* 移动端：8px；桌面端：16px —— 通过border-bottom-width实现 */
+tr.wk-section-last td {
+  border-bottom: clamp(8px,1.5vw,16px) solid transparent;
+}
 
-/* 同时给weekly-grid增加border-spacing来制造行间微小间隙感，配合圆角 */
+/* 用border-spacing制造行内微小间隙，间隙处露出#F9FCF6背景 */
 .weekly-grid {
-  border-spacing: 0 0;
+  border-spacing: 0 3px;
+  border-collapse: separate;
 }
 
 /* section首行上方加一点padding让圆角更好看 */
 tr.wk-section-first td { padding-top:clamp(6px,0.8vw,10px); }
-/* section末行下方加一点padding */
+/* section末行下方加一点padding（border-bottom已负责段间间隙） */
 tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
 /* ✦ 卡片核心样式 */
