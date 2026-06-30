@@ -1,5 +1,55 @@
 # 变更日志
 
+## 2026-06-30 22:23 - 移动端周视图UI重构 — 合并表头+分段卡片化 (week-view-redesign-mobile)
+
+### 变更列表
+
+**核心目标：复刻样图布局，将周视图从独立表头+灰色底色重构为合并表头+白色分段卡片**
+
+#### 1. 清理调试代码 (Task 1)
+- **switchClassTab()**: 移除 `switchTabDebug` Banner DOM元素创建和更新逻辑
+- **renderWeekView()**: 移除所有 `[WKVIEW]` 前缀的 console.log 调试日志
+
+#### 2. CSS背景透明化 + 空格占位 (Task 2)
+- **#classWeekly 容器**: `background: transparent`（删除白底，透出项目背景色 --bg: #F9FCF6）
+- **td 单元格背景**: 统一改为 `#FFFFFF` 白色（替代原灰色底色）
+- **新增 .wk-empty-cell**: 空格子占位div，`min-height: clamp(34px,3.8vw,48px)`，确保无课格子与有课格子等高
+
+#### 3. 表头合并重构 (Task 3 - 最关键改动)
+- **删除独立 headerHtml**: 不再向 `#weeklyHeader` 写入独立的"第X周"+日期行
+- **thead 单行设计**: 将原来分离的两行（标题区+表头）合并为唯一的 `<thead><tr>` 一行：
+  - 第1列：**第N周**（去除多余"周"后缀，可点击编辑周备注）
+  - 第2-6列：**周X + 日期 + 今天标记**（如"周一 / 今天 / 06-30"）
+- **CSS类名**:
+  - `.wk-week-num-th`: 周次列（含子元素 `.wkn-label`/`.wkn-num`/`.wkn-suffix`）
+  - `.wk-date-th`: 日期列（含子元素 `.wdt-day`/`.wdt-today`/`.wdt-date`）
+
+#### 4. body分段标记 (Task 4)
+- **删除 section-divider 行**: 不再使用 `<tr class="section-divider">` 分隔上午/下午
+- **tr 类标记系统**:
+  - `wk-section-first`: 每个时段（上午/下午）的第一行节次
+  - `wk-section-last`: 每个时段的最后一行节次
+- **空单元格处理**: 空 `<td>` 内插入 `<div class="wk-empty-cell"></div>` 占位
+
+#### 5. CSS分段卡片样式 (Task 5)
+- **卡片圆角效果**:
+  - `tr.wk-section-first td:first-child`: `border-top-left-radius: 12px`（桌面）/ `10px`（移动）
+  - `tr.wk-section-first td:last-child`: `border-top-right-radius`
+  - `tr.wk-section-last td:first-child`: `border-bottom-left-radius`
+  - `tr.wk-section-last td:last-child`: `border-bottom-right-radius`
+- **卡片间距**: `tr.wk-section-last { margin-bottom: 16px }`（桌面）/ `12px`（移动）
+- **表格无缝拼接**: `border-collapse: separate; border-spacing: 0;`（消除默认间隙）
+- **响应式断点**:
+  - 移动端 ≤600px: 10px圆角，12px间距，紧凑字号
+  - 桌面端 ≥601px: 12px圆角，16px间距，宽松padding
+
+#### 6. 验证通过 (Task 6)
+- Lint检查：0 错误
+- Debug日志：0 残留（已全部清理）
+- 功能完整性：周次备注弹窗、今天高亮、空数据提示均正常
+
+---
+
 ## 2026-06-30 11:40 - Spring-to-WAAPI 引擎重写 (pwa-5)
 
 ### 变更列表
