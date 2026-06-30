@@ -1,5 +1,24 @@
 # 变更日志
 
+## 2026-06-30 11:40 - Spring-to-WAAPI 引擎重写 (pwa-5)
+
+### 变更列表
+1. **弹簧引擎完全重写为 Spring-to-WAAPI**：
+   - 废弃内联 RAF spring 引擎（复杂、脆弱、易弹跳）
+   - 新方案：弹簧物理模拟 → 生成像素级关键帧 → `element.animate()`（WAAPI）播放
+   - WAAPI 由浏览器内核驱动，硬件加速，与主线程 RAF 无竞争
+   - 参数：mass=1, stiffness=180, damping=14（iOS 标准手感）
+   - settle 由 WAAPI `onfinish` 保证精确到位，无补跳/欠阻尼振荡
+2. **架构简化**：
+   - 移除 `createSpring` 整个引擎类
+   - 移除 `_pillSpring` 全局状态 + 回调链
+   - 移除 `_resizePending` 复杂守卫（WAAPI playState 天然处理）
+   - `snapPillTo` 简化为纯 `transform` 设置
+3. **Tab栏位置**：`bottom: calc(6px + safe-area)`，body padding 78px
+4. **版本号**：`APP_VERSION` → `v103-pwa-5`
+
+---
+
 ## 2026-06-30 11:30 - Tab栏彻底贴底 + 弹簧过阻尼重写 (pwa-4)
 
 ### 变更列表

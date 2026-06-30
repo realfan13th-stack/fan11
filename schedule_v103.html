@@ -4901,7 +4901,7 @@ function getExportMonths(startDate,endDate){
 <script>
 (function initPWA() {
   'use strict';
-  var APP_VERSION = 'v103-pwa-4';
+  var APP_VERSION = 'v103-pwa-5';
   var SW_ENABLED = false;  // Service Worker disabled — no cache, always fetch latest
   var CACHE_NAME = 'schedule-workbench-' + APP_VERSION;
   // Self-healing: clear old caches & unregister old SWs when version changes
@@ -5248,7 +5248,7 @@ function getExportMonths(startDate,endDate){
 .pwa-bottom-bar {
   display: none;
   position: fixed;
-  bottom: env(safe-area-inset-bottom, 0px);
+  bottom: calc(6px + env(safe-area-inset-bottom, 0px));
   left: 16px;
   right: 16px;
   width: calc(100vw - 32px);
@@ -5351,7 +5351,7 @@ function getExportMonths(startDate,endDate){
 
 @media (max-width: 768px) {
   .pwa-bottom-bar { display: flex; }
-  body { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  body { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* ── P2.3: Pull-to-refresh indicator ── */
@@ -5471,51 +5471,27 @@ function getExportMonths(startDate,endDate){
     barEl.addEventListener('click', onClickCapture, true);
   }
 
-  // ── Inline Spring Physics Engine (~35 lines, zero deps) ──
-  // Damped harmonic oscillator: acceleration = -stiffness*displacement - damping*velocity
-  function createSpring(mass, stiffness, damping) {
-    return {
-      m: mass || 1, k: stiffness || 200, c: damping || 15,
-      pos: 0, vel: 0, target: 0,
-      active: false, rafId: null,
-      onUpdate: null, onSettle: null,
-
-      setTarget: function(t) { this.target = t; if (!this.active) this.start(); },
-      start: function() { this.active = true; this._step(); },
-      stop: function() { this.active = false; if (this.rafId) cancelAnimationFrame(this.rafId); this.rafId = null; },
-
-      _step: function() {
-        if (!this.active) return;
-        var force = -this.k * (this.pos - this.target) - this.c * this.vel;
-        var acc = force / this.m;
-        this.vel += acc / 60;
-        this.pos += this.vel;
-        // Settle detection: force exact target and update DOM once more
-        if (Math.abs(this.vel) < 0.05 && Math.abs(this.pos - this.target) < 0.05) {
-          this.pos = this.target; this.vel = 0;
-          this.active = false;
-          if (this.onUpdate) this.onUpdate(this.pos); // final DOM sync
-          if (this.onSettle) this.onSettle();
-          return;
-        }
-        if (this.onUpdate) this.onUpdate(this.pos);
-        var self = this;
-        this.rafId = requestAnimationFrame(function() { self._step(); });
-      }
-    };
+  // ── Spring-to-WAAPI Engine (inline, zero deps) ──
+  // Simulates damped harmonic oscillator, records keyframes, feeds to element.animate()
+  function generateSpringKeyframes(from, to, mass, stiffness, damping, velocity) {
+    mass = mass || 1; stiffness = stiffness || 180; damping = damping || 14; velocity = velocity || 0;
+    var pos = from, vel = velocity, dt = 1/60, frames = [], maxFrames = 300;
+    for (var i = 0; i < maxFrames; i++) {
+      frames.push(pos);
+      var force = -stiffness * (pos - to) - damping * vel;
+      vel += (force / mass) * dt;
+      pos += vel * dt;
+      if (Math.abs(vel) < 0.001 && Math.abs(pos - to) < 0.001) break;
+    }
+    frames.push(to); // exact final position
+    return { keyframes: frames, duration: frames.length * dt * 1000 };
   }
 
-  // Global spring instance for pill X-position animation
-  // Overdamped (c=40) → no bounce, smooth landing without oscillation
-  var _pillSpring = createSpring(1, 200, 40);
-  _pillSpring.onUpdate = function(pos) {
-    if (!pillEl || !barEl) return;
-    var barRect = barEl.getBoundingClientRect();
-    var innerWidth = barRect.width - 16;
-    var tabWidth = innerWidth / TAB_ORDER.length;
-    pillEl.style.transform = 'translateX(' + (pos * tabWidth) + 'px)';
-    pillEl.style.width = tabWidth + 'px';
-  };
+  function getPillPixelWidth() {
+    if (!barEl) return 64;
+    var iw = barEl.getBoundingClientRect().width - 16;
+    return iw / TAB_ORDER.length;
+  }
 
   // ── Drag/tap state ──
   var _ptrDown = false, _ptrStartX = 0, _ptrStartY = 0, _ptrStartIdx = 0;
@@ -5537,8 +5513,11 @@ function getExportMonths(startDate,endDate){
     _lastPtrX = e.clientX;
     _dragVel = 0;
 
-    // Kill any running spring animation immediately
-    _pillSpring.stop();
+    // Cancel any WAAPI animation
+    if (pillEl && pillEl._springAnim) {
+      pillEl._springAnim.cancel();
+      pillEl._springAnim = null;
+    }
     if (pillEl) pillEl.style.transition = 'none';
 
     try { barEl.setPointerCapture(e.pointerId); } catch(_) {}
@@ -5655,52 +5634,62 @@ function getExportMonths(startDate,endDate){
     }
   }
 
-  // ── Spring-snap pill to target index (with optional initial velocity) ──
+  // ── Spring-snap pill to target index using WAAPI element.animate() ──
   function springSnapToTab(targetIdx) {
     targetIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, targetIdx));
     activePillIdx = targetIdx;
+
+    // Cancel previous animation, if any
+    if (pillEl && pillEl._springAnim) {
+      pillEl._springAnim.cancel();
+      pillEl._springAnim = null;
+    }
 
     // Update button states immediately
     barEl.querySelectorAll('.pwa-bottom-btn').forEach(function(btn, i) {
       btn.classList.toggle('active', i === targetIdx);
     });
 
-    // Configure and launch spring from current position toward integer target
-    _pillSpring.stop();
-    _pillSpring.pos = _dragPosIdx;
-    _pillSpring.vel = _isDrag ? _dragVel * 0.008 : 0;  // carry some momentum
-    _pillSpring.setTarget(targetIdx);
-    _pillSpring.onSettle = function() {
+    if (!pillEl || !barEl) return;
+
+    var currentIdx = (typeof _dragPosIdx === 'number') ? _dragPosIdx : targetIdx;
+    var vel = _isDrag ? _dragVel * 0.008 : 0;
+    var tw = getPillPixelWidth();
+
+    // Generate spring keyframes in index-space, map to pixel-space
+    var result = generateSpringKeyframes(currentIdx, targetIdx, 1, 180, 14, vel);
+    var transformFrames = result.keyframes.map(function(v) {
+      return 'translateX(' + (v * tw) + 'px)';
+    });
+
+    pillEl.style.transition = 'none';
+    pillEl._springAnim = pillEl.animate(
+      { transform: transformFrames, width: tw + 'px' },
+      { duration: result.duration, easing: 'linear', fill: 'forwards' }
+    );
+
+    pillEl._springAnim.onfinish = function() {
+      pillEl._springAnim = null;
       var tabName = TAB_ORDER[targetIdx];
       if (typeof window.switchTab === 'function') window.switchTab(tabName);
-      // Process any deferred resize that was skipped during animation, but only
-      // if the geometry actually changed. Defer one frame to avoid re-entering spring.
-      if (_resizePending && !_ptrDown) {
-        _resizePending = false;
-        requestAnimationFrame(function() {
-          if (!_ptrDown && !_pillSpring.active) updatePillPosition();
-        });
-      }
     };
   }
 
   // ── Immediate jump (for external sync like switchTab hook or resize) ──
   function snapPillTo(idx) {
     if (!pillEl || !barEl) return;
-    _pillSpring.stop();
+    if (pillEl._springAnim) {
+      pillEl._springAnim.cancel();
+      pillEl._springAnim = null;
+    }
     _dragPosIdx = idx;
-    _pillSpring.pos = idx;
-    _pillSpring.target = idx;
-    _pillSpring.vel = 0;
     pillEl.style.transition = 'none';
-    var barRect = barEl.getBoundingClientRect();
-    var innerWidth = barRect.width - 16;
-    var tabWidth = innerWidth / TAB_ORDER.length;
-    pillEl.style.transform = 'translateX(' + (idx * tabWidth) + 'px)';
-    pillEl.style.width = tabWidth + 'px';
+    var tw = getPillPixelWidth();
+    pillEl.style.transform = 'translateX(' + (idx * tw) + 'px)';
+    pillEl.style.width = tw + 'px';
   }
 
-  // External moveToTab alias (used by non-drag callers wanting immediate switch)
+  // External moveToTab (immediate switch, used by non-drag callers)
   function moveToTab(idx) {
     idx = Math.max(0, Math.min(TAB_ORDER.length - 1, idx));
     activePillIdx = idx;
@@ -5714,8 +5703,6 @@ function getExportMonths(startDate,endDate){
 
   function syncBottomBar() {
     if (!barEl) return;
-    // currentTab is a top-level `let` (line ~1649), NOT a property of window.
-    // window.currentTab is always undefined → must use the bare identifier.
     var cur = (typeof currentTab !== 'undefined') ? currentTab : 'home';
     var idx = TAB_ORDER.indexOf(cur);
     if (idx >= 0 && idx !== activePillIdx) {
@@ -5732,17 +5719,15 @@ function getExportMonths(startDate,endDate){
     var idx = typeof idxOverride === 'number' ? idxOverride : activePillIdx;
     snapPillTo(idx);
   }
-  // Recalculate on resize — but NEVER while user is dragging or spring is animating
-  // (mobile Safari address bar show/hide triggers resize → would kill spring mid-flight)
-  var _resizePending = false;
+
+  // Resize: update pill geometry but never during drag or WAAPI animation
   window.addEventListener('resize', function() {
-    if (_ptrDown || _pillSpring.active) {
-      _resizePending = true;
-      return;
-    }
-    _resizePending = false;
+    if (!pillEl || !barEl) return;
+    if (_ptrDown || (pillEl._springAnim && pillEl._springAnim.playState === 'running')) return;
     updatePillPosition();
   });
+
+  // ── Hook into existing switchTab to sync bottom bar ──
 
   // Hook into existing switchTab to sync bottom bar
   var origSwitchTab = window.switchTab;
