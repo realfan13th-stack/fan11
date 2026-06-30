@@ -420,6 +420,7 @@ body {
 .as-calendar {
   display:grid; grid-template-columns:minmax(32px,40px) repeat(7,1fr); gap:6px;
   font-size:clamp(9px,1vw,12px); align-items:start;
+  background: transparent; /* 露出主页底色 */
 }
 .as-calendar .as-week-note {
   background:#F0F2F5; border:none; border-radius:10px;
@@ -473,9 +474,9 @@ body {
    ============================================================ */
 .data-mgmt { max-width:800px; }
 .data-mgmt .section {
-  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  background:transparent; border:1px solid var(--border); border-radius:var(--radius);
   padding:clamp(12px,1.8vw,20px); margin-bottom:clamp(8px,1vw,12px);
-  box-shadow:0 1px 3px var(--shadow);
+  box-shadow:none; /* 去除阴影，与主页一致 */
 }
 .data-mgmt .section-title {
   font-size:clamp(13px,1.4vw,16px); font-weight:600; color:var(--header);
@@ -775,11 +776,11 @@ body {
   .cd-label { font-size:10px; }
   .cd-unit { font-size:10px; }
   .class-grid-wrapper {
-    background: var(--card, #FFFFFF);
+    background: transparent; /* 露出主页底色 --bg #F9FCF6 */
     border-radius: 16px;
     padding: 14px 12px;
     margin-bottom: 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
+    box-shadow: none; /* 去除阴影，与主页一致 */
   }
   .class-grid-wrapper h3 {
     font-size: 17px;
@@ -1079,13 +1080,13 @@ body {
   background: transparent;
 }
 
-/* 单元格：白底 */
+/* 单元格：透明底色（露出页面背景 --bg #F9FCF6） */
 .weekly-grid td {
   border:none; padding:clamp(2px,0.3vw,4px) clamp(1px,0.2vw,3px);
   text-align:center; vertical-align:middle; cursor:pointer;
   height:auto; min-height:clamp(40px,4.2vw,54px);
   transition:0.15s; position:relative; user-select:none;
-  background:#FFFFFF; border-radius:8px;
+  background:transparent; border-radius:8px;
 }
 .weekly-grid td:hover { background:#FAFBFC; }
 .weekly-grid td.current {
@@ -1099,21 +1100,31 @@ body {
 }
 
 /* ========== 合并表头样式（第N周 + 周X+日期）========== */
-.weekly-grid thead tr { background:#FFFFFF; }
-/* 第X周列头 */
+/* 表头行：独立白色卡片（第一层） */
+.weekly-grid thead tr { background:transparent; }
+/* 表头th强制白底（作为独立卡片的第二层） */
+.weekly-grid thead tr th {
+  background:#FFFFFF; border-bottom:none;
+}
+/* 第X周列头 - 垂直居中摆法（去除斜线） */
 .wk-week-num-th {
   width:2.6em; min-width:2.6em; text-align:center; vertical-align:middle;
   background:#FFFFFF; border-bottom:none;
   padding:clamp(6px,0.7vw,10px) clamp(2px,0.3vw,5px);
 }
+/* 简化垂直布局：第 + 数字 + 周 */
+.wk-week-num-th .wk-diagonal {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1px; line-height:1.2;
+}
 .wk-week-num-th .wkn-label {
-  font-size:clamp(11px,1.15vw,13px); font-weight:600; color:var(--text); opacity:0.7;
+  font-size:clamp(10px,1vw,12px); font-weight:600; color:var(--text); opacity:0.7;
 }
 .wk-week-num-th .wkn-num {
-  font-size:clamp(18px,2.4vw,26px); font-weight:700; color:var(--header); line-height:1.2;
+  font-size:clamp(14px,1.8vw,20px); font-weight:700; color:var(--header); line-height:1.2;
 }
 .wk-week-num-th .wkn-suffix {
-  font-size:clamp(11px,1.15vw,13px); font-weight:500; color:var(--text); opacity:0.7;
+  font-size:clamp(10px,1vw,12px); font-weight:500; color:var(--text); opacity:0.7;
 }
 /* 周X+日期列头 */
 .wk-date-th {
@@ -1133,8 +1144,10 @@ body {
 }
 .wk-date-th .wdt-date {
   display:block; font-size:clamp(11px,1.15vw,13px); font-weight:500;
-  color:var(--text); opacity:0.65; margin-top:1px;
+  color:var(--text); opacity:0.65; margin-top:5px;
 }
+/* 今天状态下隐藏日期 */
+.wk-date-th.today-col .wdt-date { display:none; }
 
 /* ========== 分段白色卡片（核心视觉效果）========== */
 
@@ -1157,8 +1170,8 @@ tr:not(.wk-section-first):not(.wk-section-last) td {
 }
 
 /* section之间的间隙：用margin模拟（通过tbody分组或伪元素）*/
-/* 由于table限制，在最后一个tr后用after伪元素制造间隙 */
-tr.wk-section-last { margin-bottom:clamp(10px,1.5vw,16px); }
+/* 移动端：上下8px；桌面端：上下16px */
+tr.wk-section-last { margin-bottom:clamp(8px,1.5vw,16px); }
 
 /* 同时给weekly-grid增加border-spacing来制造行间微小间隙感，配合圆角 */
 .weekly-grid {
@@ -1198,9 +1211,10 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   white-space:nowrap; width:2.4em; background:transparent;
   font-size:clamp(11px,1.1vw,13px);
 }
+/* 节次数字：纯文字无背景 */
 .period-label-num {
   display:inline-flex; align-items:center; justify-content:center;
-  background:#F1F5F9; border-radius:8px; padding:clamp(2px,0.3vw,4px) clamp(4px,0.5vw,7px);
+  background:transparent; border-radius:0; padding:clamp(2px,0.3vw,4px) clamp(4px,0.5vw,7px);
   min-width:clamp(20px,2.5vw,26px); font-weight:600; color:var(--header);
 }
 
@@ -1238,7 +1252,7 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   flex:1; max-width:clamp(80px,12vw,120px);
   height:clamp(36px,4vw,44px);
   border:1px solid var(--border); background:var(--card);
-  border-radius:99px; cursor:pointer;
+  border-radius:10px; cursor:pointer; /* 从99px改为10px（匹配卡片风格）*/
   font-family:var(--font); font-size:clamp(10px,1.05vw,13px);
   font-weight:500; color:var(--text);
   transition:0.2s; white-space:nowrap;
@@ -1272,8 +1286,8 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   .week-card .wc-class { font-size:9px; }
   .wk-empty-cell { min-height:28px; }
 
-  /* 节次标签移动端 */
-  .period-label-num { padding:2px 4px; font-size:10px; min-width:18px; border-radius:6px; }
+  /* 节次标签移动端 - 无背景 */
+  .period-label-num { padding:2px 4px; font-size:10px; min-width:18px; border-radius:0; background:transparent; }
 
   /* 分段卡片圆角移动端 */
   tr.wk-section-first td:first-child { border-top-left-radius:10px; }
@@ -1287,7 +1301,7 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
   /* 导航按钮移动端 */
   .week-bottom-nav { gap:4px; margin-top:8px; }
-  .week-bottom-nav button { height:34px; font-size:10px; max-width:90px; }
+  .week-bottom-nav button { height:34px; font-size:10px; max-width:90px; border-radius:8px; } /* 移动端8px */
 }
 @media (min-width:601px) {
   /* 合并表头桌面端 */
@@ -1302,8 +1316,8 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   .week-card .wc-class { font-size:11px; }
   .wk-empty-cell { min-height:40px; }
 
-  /* 节次标签桌面端 */
-  .period-label-num { padding:3px 7px; font-size:13px; min-width:26px; border-radius:8px; }
+  /* 节次标签桌面端 - 无背景 */
+  .period-label-num { padding:3px 7px; font-size:13px; min-width:26px; border-radius:0; background:transparent; }
 
   /* 分段卡片圆角桌面端 */
   tr.wk-section-first td:first-child { border-top-left-radius:12px; }
@@ -2492,7 +2506,9 @@ function renderWeekView(){
   var theadHtml='<tr>';
   /* 第一列：第X周（可点击编辑备注） */
   theadHtml+='<th class="wk-week-num-th" rowspan="1" style="cursor:pointer" onclick="openWeekNotePopup(\''+wkKey+'\',\''+(weekNum||'')+'\')" title="点击编辑周备注">';
-  theadHtml+='<span class="wkn-label">第</span><span class="wkn-num">'+escapeHTML(weekDisplay.replace('第',''))+'</span><br><span class="wkn-suffix">周</span>';
+  theadHtml+='<div class="wk-diagonal">';
+  theadHtml+='<span class="wkn-label">第</span><span class="wkn-num">'+escapeHTML(weekDisplay.replace('第',''))+'</span><span class="wkn-suffix">周</span>';
+  theadHtml+='</div>';
   theadHtml+='</th>';
   /* 各日期列：周X + 日期 + 今天标记 */
   for(var di=0;di<days.length;di++){
@@ -2504,8 +2520,7 @@ function renderWeekView(){
     var dateDisplay=dParts[1]+'-'+dParts[2];
     theadHtml+='<th class="wk-date-th'+(isToday?' today-col':'')+'">';
     theadHtml+='<span class="wdt-day">周'+cnDays[di]+'</span>';
-    if(isToday)theadHtml+='<span class="wdt-today">今天</span><br>';
-    else theadHtml+='<br>';
+    if(isToday)theadHtml+='<span class="wdt-today">今天</span>';
     theadHtml+='<span class="wdt-date">'+dateDisplay+'</span>';
     theadHtml+='</th>';
   }
