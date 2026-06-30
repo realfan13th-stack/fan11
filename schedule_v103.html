@@ -4901,7 +4901,7 @@ function getExportMonths(startDate,endDate){
 <script>
 (function initPWA() {
   'use strict';
-  var APP_VERSION = 'v103-pwa-9';
+  var APP_VERSION = 'v103-pwa-10';
   var SW_ENABLED = false;  // Service Worker disabled — no cache, always fetch latest
   var CACHE_NAME = 'schedule-workbench-' + APP_VERSION;
   // Self-healing: clear old caches & unregister old SWs when version changes
@@ -5248,12 +5248,13 @@ function getExportMonths(startDate,endDate){
 .pwa-bottom-bar {
   display: none;
   position: fixed;
-  bottom: calc(8px + env(safe-area-inset-bottom, 0px)); /* ~8px above home indicator */
-  left: 50%;
-  transform: translateX(-50%);
-  width: auto;
+  bottom: calc(4px + env(safe-area-inset-bottom, 0px)); /* ~4px above home indicator */
+  left: 12px;
+  right: 12px;
+  width: calc(100vw - 24px);
+  min-height: 64px;
   height: auto;
-  padding: 4px;
+  padding: 6px 8px;
   background: #FFFFFF;
   border: 1px solid #E5E5E5;
   border-radius: 30px;
@@ -5263,7 +5264,6 @@ function getExportMonths(startDate,endDate){
   justify-content: space-evenly;
   align-items: center;
   gap: 0;
-  overflow: hidden; /* clip pill to rounded borders */
   /* Prevent long-press text/image selection & callout menus */
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -5276,12 +5276,12 @@ function getExportMonths(startDate,endDate){
 /* Floating pill indicator - capsule shape, flush with bar inner edges */
 .pwa-tab-pill {
   position: absolute;
-  top: 4px;
-  left: 4px;
-  width: calc((100% - 8px) / 4); /* 4 buttons, uniform padding, no gap */
-  height: calc(100% - 8px);
+  top: 6px;
+  left: 8px;
+  width: calc(25% - 20px); /* fallback before JS sets width; 20 = 8px left + 8px right + 4px buffer */
+  height: calc(100% - 12px);
   background: #E8E8E8;
-  border-radius: 28px;
+  border-radius: 24px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.12);
   will-change: transform;
   pointer-events: none;
@@ -5354,7 +5354,7 @@ function getExportMonths(startDate,endDate){
 
 @media (max-width: 768px) {
   .pwa-bottom-bar { display: flex; }
-  body { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+  body { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* ── P2.3: Pull-to-refresh indicator ── */
@@ -5509,7 +5509,7 @@ function getExportMonths(startDate,endDate){
   var _cachedTabWidth = 64;
   function updateCachedTabWidth() {
     if (!barEl) return;
-    var iw = barEl.getBoundingClientRect().width - 8;  // 8 = padding 4px left+right
+    var iw = barEl.getBoundingClientRect().width - 16;  // 16 = padding 8px left+right
     _cachedTabWidth = iw / TAB_ORDER.length;
   }
 
@@ -5590,7 +5590,7 @@ function getExportMonths(startDate,endDate){
 
     // Calculate target position in index units
     var barRect = barEl.getBoundingClientRect();
-    var innerWidth = barRect.width - 8;  // matching bar padding 4px+4px
+    var innerWidth = barRect.width - 16;  // matching bar padding 8px+8px
     var tabWidth = innerWidth / TAB_ORDER.length;
 
     _dragPosIdx = _ptrStartIdx + dx / tabWidth;
