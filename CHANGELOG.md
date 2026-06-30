@@ -1,5 +1,22 @@
 # 变更日志
 
+## 2026-06-30 11:30 - Tab栏彻底贴底 + 弹簧过阻尼重写 (pwa-4)
+
+### 变更列表
+1. **Tab栏位置彻底贴底**：
+   - `bottom: 2px` → `env(safe-area-inset-bottom, 0px)`（贴合 iOS Home Indicator 上沿）
+   - `body padding-bottom: 74px` → `76px`（与 bar 实际占用对齐）
+2. **弹簧动画稳定性重写**：
+   - 根因：阻尼比约 0.53（欠阻尼），到位前会来回振荡；且 settle 时未同步 DOM，导致最终补跳
+   - 修复：阻尼从 `15` 提升到 `40`（过阻尼），彻底消除振荡
+   - settle 时强制调用 `onUpdate(this.pos)`，确保 pill 精确停在目标位置
+   - 移除 `.pwa-tab-pill` 的 CSS `transition`，避免 JS 与 CSS 过渡竞争
+   - `snapPillTo()` 中显式 `transition: none`
+   - `onSettle` 中延迟一帧处理 deferred resize，防止立即重置造成二次抖动
+3. **版本号**：`APP_VERSION` → `v103-pwa-4`
+
+---
+
 ## 2026-06-30 11:15 - 关闭 Service Worker + Tab栏下移 + 文字调浅 + resize弹簧修复 (pwa-3)
 
 ### 变更列表

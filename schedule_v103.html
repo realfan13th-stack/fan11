@@ -4901,7 +4901,7 @@ function getExportMonths(startDate,endDate){
 <script>
 (function initPWA() {
   'use strict';
-  var APP_VERSION = 'v103-pwa-3';
+  var APP_VERSION = 'v103-pwa-4';
   var SW_ENABLED = false;  // Service Worker disabled — no cache, always fetch latest
   var CACHE_NAME = 'schedule-workbench-' + APP_VERSION;
   // Self-healing: clear old caches & unregister old SWs when version changes
@@ -5248,7 +5248,7 @@ function getExportMonths(startDate,endDate){
 .pwa-bottom-bar {
   display: none;
   position: fixed;
-  bottom: calc(2px + env(safe-area-inset-bottom, 0px));
+  bottom: env(safe-area-inset-bottom, 0px);
   left: 16px;
   right: 16px;
   width: calc(100vw - 32px);
@@ -5281,7 +5281,6 @@ function getExportMonths(startDate,endDate){
   border-radius: 26px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   will-change: transform;
-  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
   z-index: 0;
 }
@@ -5352,7 +5351,7 @@ function getExportMonths(startDate,endDate){
 
 @media (max-width: 768px) {
   .pwa-bottom-bar { display: flex; }
-  body { padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)); }
+  body { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* ── P2.3: Pull-to-refresh indicator ── */
@@ -5491,10 +5490,11 @@ function getExportMonths(startDate,endDate){
         var acc = force / this.m;
         this.vel += acc / 60;
         this.pos += this.vel;
-        // Settle detection
+        // Settle detection: force exact target and update DOM once more
         if (Math.abs(this.vel) < 0.05 && Math.abs(this.pos - this.target) < 0.05) {
           this.pos = this.target; this.vel = 0;
           this.active = false;
+          if (this.onUpdate) this.onUpdate(this.pos); // final DOM sync
           if (this.onSettle) this.onSettle();
           return;
         }
@@ -5506,7 +5506,8 @@ function getExportMonths(startDate,endDate){
   }
 
   // Global spring instance for pill X-position animation
-  var _pillSpring = createSpring(1, 200, 15);   // mass=1, stiffness=200, damping=15
+  // Overdamped (c=40) → no bounce, smooth landing without oscillation
+  var _pillSpring = createSpring(1, 200, 40);
   _pillSpring.onUpdate = function(pos) {
     if (!pillEl || !barEl) return;
     var barRect = barEl.getBoundingClientRect();
@@ -5672,10 +5673,13 @@ function getExportMonths(startDate,endDate){
     _pillSpring.onSettle = function() {
       var tabName = TAB_ORDER[targetIdx];
       if (typeof window.switchTab === 'function') window.switchTab(tabName);
-      // Process any deferred resize that was skipped during animation
+      // Process any deferred resize that was skipped during animation, but only
+      // if the geometry actually changed. Defer one frame to avoid re-entering spring.
       if (_resizePending && !_ptrDown) {
         _resizePending = false;
-        updatePillPosition();
+        requestAnimationFrame(function() {
+          if (!_ptrDown && !_pillSpring.active) updatePillPosition();
+        });
       }
     };
   }
@@ -5688,6 +5692,7 @@ function getExportMonths(startDate,endDate){
     _pillSpring.pos = idx;
     _pillSpring.target = idx;
     _pillSpring.vel = 0;
+    pillEl.style.transition = 'none';
     var barRect = barEl.getBoundingClientRect();
     var innerWidth = barRect.width - 16;
     var tabWidth = innerWidth / TAB_ORDER.length;
