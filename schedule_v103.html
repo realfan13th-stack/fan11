@@ -1106,7 +1106,7 @@ body {
 
 /* 表格容器 */
 .weekly-grid-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-.weekly-grid { width:100%; border-collapse:collapse; table-layout:fixed; }
+.weekly-grid { width:100%; border-collapse:separate; border-spacing:2px 3px; table-layout:fixed; }
 
 /* 轻量化表头 */
 .weekly-grid th {
@@ -1114,19 +1114,20 @@ body {
   padding:clamp(6px,0.7vw,10px) clamp(4px,0.4vw,8px);
   text-align:center; font-weight:600; font-size:clamp(11px,1.15vw,13px);
   white-space:nowrap; border-bottom:2px solid #E2E8F0;
+  border-radius:6px;
 }
 .weekly-grid th:first-child { width:2.4em; min-width:2.4em; }
 .weekly-grid th.today-col { color:#16A34A; border-bottom-color:#16A34A; }
 
-/* 单元格去边框化 */
+/* 单元格留白透底 */
 .weekly-grid td {
-  border:none; padding:clamp(3px,0.4vw,6px) clamp(2px,0.3vw,5px);
+  border:none; padding:clamp(2px,0.3vw,4px) clamp(1px,0.2vw,3px);
   text-align:center; vertical-align:middle; cursor:pointer;
-  min-height:clamp(48px,5vw,64px); height:clamp(48px,5vw,64px);
+  height:auto; min-height:clamp(40px,4.2vw,54px);
   transition:0.15s; position:relative; user-select:none;
-  background:transparent;
+  background:#F5F7FA; border-radius:8px;
 }
-.weekly-grid td:hover { background:rgba(89,122,181,0.03); }
+.weekly-grid td:hover { background:#EDF0F4; }
 .weekly-grid td.current {
   box-shadow:inset 0 0 0 2px var(--highlight);
   animation:pulse 2.5s ease-in-out infinite;
@@ -1135,11 +1136,11 @@ body {
 /* ✦ 卡片核心样式 */
 .week-card {
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  border-radius:12px;
-  padding:clamp(4px,0.5vw,8px) clamp(3px,0.4vw,6px);
-  box-shadow:0 1px 3px rgba(0,0,0,0.05);
-  min-height:clamp(40px,4.5vw,56px); height:calc(100% + 4px);
-  transition:0.15s; position:relative; margin:-2px;
+  border-radius:10px;
+  padding:clamp(3px,0.4vw,6px) clamp(2px,0.3vw,5px);
+  box-shadow:0 1px 2px rgba(0,0,0,0.04);
+  min-height:clamp(34px,3.8vw,48px); height:auto;
+  transition:0.15s; position:relative;
 }
 .week-card:hover {
   box-shadow:0 2px 10px rgba(0,0,0,0.08);
@@ -1174,14 +1175,14 @@ body {
   letter-spacing:clamp(3px,0.5vw,6px); border:none;
 }
 
-/* 圆点标记（代课/换课） */
-.weekly-grid .wcell-dot {
-  position:absolute; top:3px; right:3px;
-  width:8px; height:8px; border-radius:50%; z-index:2; pointer-events:none;
+/* 圆点标记（代课/换课）—— 定位在 .week-card 内部右上角 */
+.week-card .wcell-dot {
+  position:absolute; top:2px; right:2px;
+  width:7px; height:7px; border-radius:50%; z-index:2; pointer-events:none;
 }
-.weekly-grid .wcell-dot.sub-dot { background:#e74c3c; }
-.weekly-grid .wcell-dot.swp-dot { background:#f39c12; }
-.weekly-grid .wcell-dot.swp-out-dot {
+.week-card .wcell-dot.sub-dot { background:#e74c3c; }
+.week-card .wcell-dot.swp-dot { background:#f39c12; }
+.week-card .wcell-dot.swp-out-dot {
   background:#e74c3c; color:#fff; font-size:9px; font-weight:700;
   line-height:9px; text-align:center; border-radius:2px;
   width:auto; height:auto; padding:0 2px;
@@ -1225,8 +1226,8 @@ body {
   .week-date-col { min-width:30px; padding:2px 1px; }
   .week-date-col .wd-date { font-size:12px; }
   .weekly-grid th { font-size:11px; padding:4px 2px; }
-  .weekly-grid td { height:42px; min-height:42px; padding:2px 1px; }
-  .week-card { border-radius:9px; padding:3px 2px; min-height:36px; margin:-1px; }
+  .weekly-grid td { min-height:38px; padding:2px 1px; }
+  .week-card { border-radius:8px; padding:3px 2px; min-height:30px; }
   .week-card .wc-name { font-size:11px; }
   .week-card .wc-class { font-size:9px; }
   .period-label-num { padding:2px 5px; font-size:10px; min-width:20px; }
@@ -1236,8 +1237,8 @@ body {
 }
 @media (min-width:601px) {
   .weekly-grid th { font-size:14px; padding:8px 6px; }
-  .weekly-grid td { height:50px; min-height:50px; padding:5px 3px; }
-  .week-card { border-radius:12px; padding:6px 4px; min-height:44px; }
+  .weekly-grid td { min-height:44px; padding:4px 3px; }
+  .week-card { border-radius:10px; padding:5px 4px; min-height:38px; }
   .week-card .wc-name { font-size:14px; }
   .week-card .wc-class { font-size:11px; }
   .period-label-num { padding:3px 7px; font-size:13px; }
@@ -1927,6 +1928,7 @@ function editWeekNote(wkKey,fallback){
     var val=input.value.trim();
     if(val){appData.afterSchool.weekNotes[wkKey]=val;}else{delete appData.afterSchool.weekNotes[wkKey];}
     saveData();renderAfterSchool();
+    try{renderWeekView();}catch(e){}
   }
   input.addEventListener("input",function(){clearTimeout(timer);timer=setTimeout(commit,300);});
   clearBtn.onclick=function(){input.value="";commit();overlay.remove();};
@@ -2360,22 +2362,29 @@ function getCellDotHTML(dayName,itemId,globalIdx){
 // ============================================================
 // 8.6 周视图渲染（卡片化升级 — 粉彩卡片 + 透明空单元格 + 底部胶囊导航）
 // ============================================================
-/* 学科粉彩色生成器 —— 基于课程名哈希确定性地返回柔和 HSL */
+/* 学科粉彩色生成器 —— 16色调预定义色盘，色相均匀分布，饱和度40-55%，明度75-84%，确保学科间视觉区分明显 */
 function getSubjectColor(courseName){
-  if(!courseName)return'hsl(210,22%,87%)';
+  if(!courseName)return'hsl(210,45%,82%)';
+  var palette=[
+    'hsl(0,48%,80%)',    'hsl(22,50%,78%)',   'hsl(45,52%,76%)',   'hsl(68,45%,78%)',
+    'hsl(90,47%,77%)',   'hsl(112,44%,79%)',  'hsl(135,46%,78%)',  'hsl(158,42%,77%)',
+    'hsl(180,48%,78%)',  'hsl(202,50%,77%)',  'hsl(225,46%,79%)',  'hsl(248,43%,78%)',
+    'hsl(270,44%,77%)',  'hsl(292,47%,78%)',  'hsl(315,45%,79%)',  'hsl(337,48%,77%)'
+  ];
   var hash=0;
   for(var i=0;i<courseName.length;i++){hash=courseName.charCodeAt(i)+((hash<<5)-hash);hash|=0;}
-  var h=Math.abs(hash%360);
-  var s=20+Math.abs((hash>>8)%11);  // 20-30%
-  var l=84+Math.abs((hash>>16)%9);  // 84-92%
-  return'hsl('+h+','+s+'%,'+l+'%)';
+  return palette[Math.abs(hash%16)];
 }
-/* ISO 周数计算 */
-function getWeekNumber(d){
-  var dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
-  dt.setUTCDate(dt.getUTCDate()+4-(dt.getUTCDay()||7));
-  var ys=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
-  return Math.ceil((((dt-ys)/86400000)+1)/7);
+/* 从 Monday 日期字符串构造晚托 wkKey ("YYYY-MM-wR") */
+function getWeekKeyFromMonday(mondayStr){
+  var p=mondayStr.split('-'), y=+p[0], m=+p[1]-1, d=+p[2];
+  var firstDay=new Date(y,m,1).getDay(), offset=firstDay===0?6:firstDay-1;
+  var r=Math.floor((d+offset-1)/7);
+  return y+'-'+String(m+1).padStart(2,'0')+'-w'+r;
+}
+/* 从周视图打开周备注弹窗 */
+function openWeekNotePopup(wkKey,defaultNote){
+  editWeekNote(wkKey,defaultNote);
 }
 function renderWeekView(){
   var cs=appData.classSchedule;
@@ -2388,10 +2397,21 @@ function renderWeekView(){
   var todayStr=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
   var cnDays=['一','二','三','四','五','六','日'];
 
-  /* 新头部：左"第N周" + 右日期横排 */
+  /* 新头部：左"第N周"(联动晚托) + 右日期横排 */
   var monday=weekDates.monday;
-  var weekNum=monday?getWeekNumber(monday):"";
-  var headerHtml='<div class="week-title-area"><span class="week-title-num">第'+weekNum+'</span><span class="week-title-suffix">周</span></div>';
+  var weekNum="";
+  var wkKey="",noteFromAfterSchool="";
+  if(monday){
+    var mp=monday.split('-');
+    weekNum=getWeekNumber(+mp[0],+mp[1]-1,+mp[2]);
+    wkKey=getWeekKeyFromMonday(monday);
+    var as=appData.afterSchool||{};
+    if(as.weekNotes&&as.weekNotes[wkKey])noteFromAfterSchool=as.weekNotes[wkKey];
+  }
+  var weekDisplay=noteFromAfterSchool||('第'+weekNum);
+  var headerHtml='<div class="week-title-area" style="cursor:pointer" onclick="openWeekNotePopup(\''+wkKey+'\',\''+(weekNum||'')+'\')" title="点击编辑周备注">'
+    +'<span class="week-title-num">'+escapeHTML(weekDisplay)+'</span>'
+    +'<span class="week-title-suffix">周</span></div>';
   headerHtml+='<div class="week-date-row">';
   for(var di=0;di<days.length;di++){
     var dayName=days[di];
@@ -2468,7 +2488,7 @@ function renderWeekView(){
         bodyHtml+='<td class="'+cellClasses.trim()+'" data-date="'+dateKey+'" data-day="'+dayName+'" data-itemid="'+it.id+'" onclick="openWeekCellPopup(event,\''+dateKey+'\',\''+it.id+'\',\''+dayName+'\')">';
         if(parsed.main){
           var bgColor=getSubjectColor(parsed.main);
-          bodyHtml+=dotStr+'<div class="week-card" style="background:'+bgColor+';">';
+          bodyHtml+='<div class="week-card" style="background:'+bgColor+';">'+dotStr;
           bodyHtml+='<span class="wc-name">'+escapeHTML(parsed.main)+'</span>';
           if(parsed.sub)bodyHtml+='<span class="wc-class">'+escapeHTML(parsed.sub)+'</span>';
           bodyHtml+='</div>';
