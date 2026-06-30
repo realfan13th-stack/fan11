@@ -1928,7 +1928,7 @@ function editWeekNote(wkKey,fallback){
     var val=input.value.trim();
     if(val){appData.afterSchool.weekNotes[wkKey]=val;}else{delete appData.afterSchool.weekNotes[wkKey];}
     saveData();renderAfterSchool();
-    try{renderWeekView();}catch(e){}
+    try{renderWeekView();}catch(e){console.error('[editWeekNote] renderWeekView crash',e);}
   }
   input.addEventListener("input",function(){clearTimeout(timer);timer=setTimeout(commit,300);});
   clearBtn.onclick=function(){input.value="";commit();overlay.remove();};
@@ -2040,10 +2040,12 @@ function switchDM(dm){
   if(dm==="theme")renderThemeSelector();
 }
 function switchClassTab(tab){
+  console.log('[SWITCHCLASSTAB] tab='+tab);
   currentClassTab=tab;
   document.querySelectorAll(".class-subtab").forEach(b=>b.classList.toggle("active",b.dataset.csub===tab));
-  document.querySelectorAll(".class-subpanel").forEach(p=>p.classList.toggle("active",p.id==="class"+(tab==="personal"?"Personal":tab==="group"?"Group":"Weekly")));
-  if(tab==="weekly"){weeklyWeekOffset=0;renderWeekView();}
+  document.querySelectorAll(".class-subpanel").forEach(p=>{var match=p.id==="class"+(tab==="personal"?"Personal":tab==="group"?"Group":"Weekly");p.classList.toggle("active",match);});
+  console.log('[SWITCHCLASSTAB] panels toggled, calling renderer');
+  if(tab==="weekly"){weeklyWeekOffset=0;console.log('[SWITCHCLASSTAB] calling renderWeekView');renderWeekView();}
   else if(tab==="group"){weeklyWeekOffset=0;if(typeof renderClassGroupSchedule==="function")renderClassGroupSchedule();}
   else {weeklyWeekOffset=0;if(typeof renderClassSchedule==="function")renderClassSchedule();}
 }
@@ -2388,7 +2390,9 @@ function openWeekNotePopup(wkKey,defaultNote){
 }
 function renderWeekView(){
   var cs=appData.classSchedule;
+  if(!cs)return;
   var days=cs.days;
+  if(!days)return;
   var weekDates=getWeekDates(weeklyWeekOffset);
   var sections=getClassSectionItems();
   var subs=appData.substitutions||[];
@@ -2398,13 +2402,18 @@ function renderWeekView(){
   var cnDays=['一','二','三','四','五','六','日'];
 
   /* 新头部：左"第N周"(联动晚托) + 右日期横排 */
+  console.log('[WKVIEW] header start');
   var monday=weekDates.monday;
+  console.log('[WKVIEW] monday='+JSON.stringify(monday)+' type='+typeof monday);
   var weekNum="";
   var wkKey="",noteFromAfterSchool="";
   if(monday){
     var mp=monday.split('-');
-    weekNum=getWeekNumber(+mp[0],+mp[1]-1,+mp[2]);
-    wkKey=getWeekKeyFromMonday(monday);
+    console.log('[WKVIEW] mondayParts='+JSON.stringify(mp));
+    try{weekNum=getWeekNumber(+mp[0],+mp[1]-1,+mp[2]);}catch(e){console.error('[WKVIEW] getWeekNumber FAIL',e);weekNum='?';}
+    console.log('[WKVIEW] weekNum='+weekNum);
+    try{wkKey=getWeekKeyFromMonday(monday);}catch(e){console.error('[WKVIEW] getWeekKeyFromMonday FAIL',e);wkKey='?';}
+    console.log('[WKVIEW] wkKey='+wkKey);
     var as=appData.afterSchool||{};
     if(as.weekNotes&&as.weekNotes[wkKey])noteFromAfterSchool=as.weekNotes[wkKey];
   }
@@ -2444,9 +2453,11 @@ function renderWeekView(){
   document.getElementById("weeklyGridHeader").innerHTML=theadHtml;
 
   /* 表格主体：卡片化渲染 */
+  console.log('[WKVIEW] body start, sections='+sections.length);
   var bodyHtml="";
   var globalIdx=0;
   sections.forEach(function(sec,si){
+    console.log('[WKVIEW]   section['+si+'] name='+sec.sectionName+' items='+sec.items.length);
     bodyHtml+='<tr class="section-divider"><td colspan="'+(days.length+1)+'">'+sec.sectionName+'</td></tr>';
     sec.items.forEach(function(it){
       var label=String(globalIdx+1);
@@ -2504,8 +2515,10 @@ function renderWeekView(){
     });
   });
   document.getElementById("weeklyGridBody").innerHTML=bodyHtml;
+  console.log('[WKVIEW] body END, bodyHtml length='+bodyHtml.length);
 
   /* 底部导航按钮状态 */
+  console.log('[WKVIEW] nav start');
   var navBtn=document.getElementById("weekNavCurrent");
   if(navBtn){
     if(weeklyWeekOffset===0){
@@ -2526,6 +2539,13 @@ function renderWeekView(){
     var subCount=subs.length;
     if(subCount>0)statsEl.innerHTML='本学期已记录 <span>'+subCount+'</span> 节代课';
     else statsEl.innerHTML='';
+  }
+  /* 检查 grid 是否为空，给空白格子一个提示 */
+  var gridHasData=false;
+  days.forEach(function(d){var row=cs.grid?cs.grid[d]:null;if(row){Object.keys(row).forEach(function(k){if(row[k])gridHasData=true;});}});
+  if(!gridHasData){
+    var emptyMsg=document.getElementById("weeklyStats");
+    if(emptyMsg)emptyMsg.innerHTML='<span style="color:#f59e0b;font-size:12px;">⚠ 个人课表暂无数据，请在「个人课表」标签中输入课程</span>';
   }
 }
 // 关闭周视图弹窗
