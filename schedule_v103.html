@@ -460,7 +460,7 @@ body {
 .as-calendar .as-cell .special-mark { color:var(--text); opacity:0.55; }
 .holiday-mark { line-height:1.3; }
 .as-calendar .as-cell .holiday-mark::before { content:''; flex-shrink:0; width:7px; height:7px; border-radius:50%; background:#639148; }
-.as-calendar .as-cell.today { box-shadow:inset 0 0 0 2px rgba(15,23,42,0.15); }
+.as-calendar .as-cell.today { box-shadow:inset 0 0 0 2.5px rgba(59,130,246,0.5); }
 .as-calendar .as-cell.weekend { opacity:0.45; }
 .as-calendar .as-cell.empty { background:transparent; opacity:0.25; }
 
@@ -1706,7 +1706,7 @@ const DEFAULT_DATA = {
   semester:{start:"2026-03-01",end:"2026-07-05"},
   dayPlan:{"2026-06-01":{type:"holiday",name:"儿童节",source:"user"},"2026-06-19":{type:"holiday",name:"端午",source:"user"},"2026-06-20":{type:"holiday",name:"端午",source:"user"},"2026-06-21":{type:"holiday",name:"端午",source:"user"}},
   schedules:{summer:{title:"夏令",sections:JSON.parse(JSON.stringify(DEFAULT_SECTIONS_SUMMER))},winter:{title:"冬令",sections:JSON.parse(JSON.stringify(DEFAULT_SECTIONS_WINTER))}},
-  afterSchool:{teachers:[{name:"张老师",color:"#4a9eff"},{name:"王老师",color:"#ff8c42"},{name:"李老师",color:"#ffd700"}]},
+  afterSchool:{teachers:[{name:"张老师",color:"#DB6E74"},{name:"王老师",color:"#87CCED"},{name:"李老师",color:"#FFC966"}]},
   classSchedule:{days:["星期一","星期二","星期三","星期四","星期五"],grid:{}},
   classGroupSchedule:{days:["星期一","星期二","星期三","星期四","星期五"],grid:{}},
 };
@@ -3113,9 +3113,11 @@ function saveTeacherEdit(){
   saveData();renderAfterSchool();updateTodayAfterSchool();
   showImportStatus("教师信息已保存","success");
 }
+var DEFAULT_TEACHER_COLORS=["#DB6E74","#87CCED","#FFC966","#39556D","#E8F8F9","#6B8E7B","#C5A0DC","#F4A261"];
 function addTeacher(){
   const as=appData.afterSchool;
-  as.teachers.push({name:"新教师",color:"#"+"\u0000"+"00000".replace(/0/g,()=>(~~(Math.random()*16)).toString(16))});
+  const color=DEFAULT_TEACHER_COLORS[as.teachers.length%DEFAULT_TEACHER_COLORS.length];
+  as.teachers.push({name:"新教师",color:color});
   renderTeacherEdit();saveData();
 }
 function removeTeacher(i){
@@ -4031,9 +4033,9 @@ function clearAllUserData(){
 
     appData.afterSchool = {
       teachers:[
-        {name:"张老师",color:"#4a9eff"},
-        {name:"李老师",color:"#ff8c42"},
-        {name:"王老师",color:"#ffd700"}
+        {name:"张老师",color:"#DB6E74"},
+        {name:"王老师",color:"#87CCED"},
+        {name:"李老师",color:"#FFC966"}
       ],
       weekNotes:{}
     };
@@ -4107,9 +4109,9 @@ function fillExampleData(){
 
     appData.afterSchool = {
       teachers:[
-        {name:"张老师",color:"#4a9eff"},
-        {name:"李老师",color:"#ff8c42"},
-        {name:"王老师",color:"#ffd700"}
+        {name:"张老师",color:"#DB6E74"},
+        {name:"王老师",color:"#87CCED"},
+        {name:"李老师",color:"#FFC966"}
       ],
       weekNotes:{}
     };
@@ -4834,23 +4836,26 @@ function exportAfterSchoolImage(range){
         var inSem=dateKey&&dateKey>=(sem.start||"0000-00-00")&&dateKey<=(sem.end||"9999-99-99");
         if(!inMonth||!inSem){td.style.background="#f8fafc";td.innerHTML="";}
         else{
-          td.innerHTML='<div style="font-size:13px;color:#24324b;font-weight:800;line-height:1.2;">'+dayNum+"</div>";
           var dp=appData.dayPlan?appData.dayPlan[dateKey]:null;
+          var weekday=new Date(year,month-1,dayNum).getDay();
+          var isWeekend=(weekday===0||weekday===6);
           if(dp&&dp.type==="holiday"){
             td.style.background="#ecfdf3";
             var hColor=dp.color||"#00B050";
-            td.innerHTML+='<div style="margin-top:3px;font-size:10px;font-weight:700;color:'+hColor+';line-height:1.15;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4caf50;margin-right:3px;vertical-align:middle;"></span>'+dp.name+"</div>";
+            td.innerHTML='<div style="font-size:13px;color:#24324b;font-weight:800;line-height:1.2;">'+dayNum+'</div><div style="margin-top:3px;font-size:10px;font-weight:700;color:'+hColor+';line-height:1.15;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4caf50;margin-right:3px;vertical-align:middle;"></span>'+dp.name+"</div>";
           }else if(dp&&dp.type==="none"){
             td.style.background="#fff1f2";
-            td.innerHTML+='<div style="font-size:10px;color:#e74c3c;font-weight:700;line-height:1.15;margin-top:3px;">不托</div>';
+            td.innerHTML='<div style="font-size:13px;color:#24324b;font-weight:800;line-height:1.2;">'+dayNum+'</div><div style="font-size:10px;color:#e74c3c;font-weight:700;line-height:1.15;margin-top:3px;">不托</div>';
           }else if(dp&&dp.teacher){
             var tObj=teachers.find(function(x){return x.name===dp.teacher;});
             var tColor=tObj?tObj.color:"#597AB5";
-            td.innerHTML+='<div style="margin-top:3px;border-radius:6px;padding:2px 5px;color:#fff;font-size:10px;line-height:1.2;background:'+tColor+';display:inline-block;font-weight:700;">'+dp.teacher+"</div>";
+            td.style.background=tColor;
+            td.innerHTML='<div style="font-size:13px;color:#fff;font-weight:800;line-height:1.2;">'+dayNum+"</div>";
             if(teacherStats[dp.teacher]!==undefined)teacherStats[dp.teacher]++;
+          }else{
+            td.innerHTML='<div style="font-size:13px;color:#24324b;font-weight:800;line-height:1.2;">'+dayNum+"</div>";
+            if(isWeekend)td.style.background="#f8fafc";
           }
-          var weekday=new Date(year,month-1,dayNum).getDay();
-          if(weekday===0||weekday===6)td.style.background="#f8fafc";
         }
         wkRow.appendChild(td);
       }
