@@ -1092,10 +1092,10 @@ body {
   animation:pulse 2.5s ease-in-out infinite;
 }
 
-/* 空格子占位：保持与 week-card 等高，白色背景 */
+/* 空格子占位：保持与 week-card 等高，透明背景 */
 .wk-empty-cell {
   display:inline-block; width:100%; min-height:clamp(38px,4.2vw,52px); height:100%;
-  background:#FFFFFF; border-radius:10px;
+  background:transparent; border-radius:10px;
 }
 
 /* ========== 合并表头样式（第N周 + 周X+日期）========== */
@@ -1131,6 +1131,7 @@ body {
   background:transparent; border-bottom:none;
   padding:clamp(5px,0.6vw,9px) clamp(2px,0.3vw,4px);
   min-width:clamp(36px,6vw,52px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
 }
 .wk-date-th .wdt-day {
   display:block; font-size:clamp(12px,1.3vw,15px); font-weight:600; color:var(--header);
@@ -1139,7 +1140,7 @@ body {
 .wk-date-th.today-col .wdt-day { color:#16A34A; }
 .wk-date-th .wdt-today {
   display:block; font-size:clamp(11px,1.15vw,13px); font-weight:500; color:#16A34A;
-  line-height:1.2; margin-top:4px;
+  line-height:1.2; margin-top:3px;
 }
 .wk-date-th .wdt-date {
   display:block; font-size:clamp(11px,1.15vw,13px); font-weight:500;
@@ -1262,15 +1263,15 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   .wk-week-num-th .wkn-suffix { font-size:10px; }
   .wk-date-th { padding:4px 2px; min-width:32px; }
   .wk-date-th .wdt-day { font-size:11px; }
-  .wk-date-th .wdt-today { font-size:10px; margin-top:4px; }
+  .wk-date-th .wdt-today { font-size:10px; margin-top:3px; }
   .wk-date-th .wdt-date { font-size:10px; }
 
   /* 表格单元格移动端 */
   .weekly-grid td { min-height:36px; padding:2px 1px; border-radius:6px; }
-  .week-card { border-radius:7px; padding:3px 2px; height:28px; width:100%; }
+  .week-card { border-radius:7px; padding:4px 2px; height:30px; width:100%; }
   .week-card .wc-name { font-size:11px; }
   .week-card .wc-class { font-size:9px; }
-  .wk-empty-cell { min-height:28px; background:#FFFFFF; }
+  .wk-empty-cell { min-height:30px; background:transparent; }
 
   /* 节次标签移动端 - 无背景 */
   .period-label-num { padding:2px 4px; font-size:11px; min-width:20px; border-radius:0; background:transparent; }
@@ -1297,10 +1298,10 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
   /* 表格单元格桌面端 */
   .weekly-grid td { min-height:46px; padding:4px 3px; border-radius:8px; }
-  .week-card { border-radius:10px; padding:5px 4px; height:40px; }
+  .week-card { border-radius:10px; padding:6px 4px; height:42px; }
   .week-card .wc-name { font-size:14px; }
   .week-card .wc-class { font-size:11px; }
-  .wk-empty-cell { min-height:40px; background:#FFFFFF; border-radius:10px; }
+  .wk-empty-cell { min-height:42px; background:transparent; border-radius:10px; }
 
   /* 节次标签桌面端 - 无背景 */
   .period-label-num { padding:3px 7px; font-size:14px; min-width:28px; border-radius:0; background:transparent; }
