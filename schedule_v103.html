@@ -1137,16 +1137,12 @@ body {
   line-height:1.3;
 }
 .wk-date-th.today-col .wdt-day { color:#16A34A; }
-.wk-date-th .wdt-today {
-  display:block; font-size:clamp(11px,1.15vw,13px); font-weight:500; color:#16A34A;
-  line-height:1.2; margin-top:6px;
-}
 .wk-date-th .wdt-date {
   display:block; font-size:clamp(11px,1.15vw,13px); font-weight:500;
   color:var(--text); opacity:0.65; margin-top:6px;
 }
-/* 今天状态下隐藏日期 */
-.wk-date-th.today-col .wdt-date { display:none; }
+/* 今天列的日期位置显示为"今天"，使用绿色 */
+.wk-date-th.today-col .wdt-date { color:#16A34A; opacity:1; }
 
 /* ========== 分段间距控制 ========== */
 
@@ -1262,8 +1258,8 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   .wk-week-num-th .wkn-suffix { font-size:10px; }
   .wk-date-th { padding:4px 2px; min-width:32px; }
   .wk-date-th .wdt-day { font-size:11px; }
-  .wk-date-th .wdt-today { font-size:10px; margin-top:6px; }
   .wk-date-th .wdt-date { font-size:10px; margin-top:6px; }
+  .wk-date-th.today-col .wdt-date { color:#16A34A; opacity:1; }
 
   /* 表格单元格移动端 */
   .weekly-grid td { min-height:36px; padding:2px 1px; border-radius:6px; }
@@ -2524,8 +2520,7 @@ function renderWeekView(){
     var dateDisplay=dParts[1]+'-'+dParts[2];
     theadHtml+='<th class="wk-date-th'+(isToday?' today-col':'')+'">';
     theadHtml+='<span class="wdt-day">周'+cnDays[di]+'</span>';
-    if(isToday)theadHtml+='<span class="wdt-today">今天</span>';
-    theadHtml+='<span class="wdt-date">'+dateDisplay+'</span>';
+    theadHtml+='<span class="wdt-date">'+ (isToday?'今天':dateDisplay) +'</span>';
     theadHtml+='</th>';
   }
   theadHtml+='</tr>';
