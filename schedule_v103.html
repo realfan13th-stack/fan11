@@ -379,8 +379,12 @@ body {
    晚托视图
    ============================================================ */
 .afterschool-header {
-  display:flex; align-items:center; gap:clamp(8px,1.5vw,16px);
-  margin-bottom:clamp(8px,1vw,14px); flex-wrap:wrap;
+  display:flex; flex-direction:column; gap:clamp(6px,1vw,10px);
+  margin-bottom:clamp(8px,1vw,14px);
+}
+/* 晚托月份选择容器 —— 独立一行 */
+.month-tabs-container {
+  margin-bottom:clamp(8px,1vw,14px);
 }
 /* 学期编辑栏 —— 简洁行内文本风格 */
 .semester-bar-card {
@@ -1567,6 +1571,8 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
           <button class="as-subtab active" data-as="calendar" onclick="switchAfterschoolTab('calendar')">托管表</button>
         </div>
         <div id="semesterBar" style="margin-bottom:8px;font-size:clamp(12px,1.2vw,14px);"></div>
+      </div>
+      <div class="month-tabs-container">
         <div class="month-tabs" id="monthTabs"></div>
       </div>
       <div class="as-legend" id="asLegend"></div>
@@ -2473,17 +2479,17 @@ function getCellDotHTML(dayName,itemId,globalIdx){
 // ============================================================
 // 8.6 周视图渲染（卡片化升级 — 粉彩卡片 + 透明空单元格 + 底部胶囊导航）
 // ============================================================
-/* 学科莫兰迪色生成器 —— 32色调预定义色盘，基于用户提供的莫兰迪色系，确保学科间视觉区分明显 */
+/* 学科色彩生成器 —— 32色HSL预定义色盘，彩云风格，色相均匀分布，饱和度40-55%，明度78-88%，确保文字可读性 */
 function getSubjectColor(courseName){
-  if(!courseName)return'#B7D0D4';
+  if(!courseName)return'hsl(210,45%,82%)';
   var palette=[
-    '#FFFEFC','#B7D0D4','#BBAA9F','#D8CBB9','#ECB6A2',
-    '#FFFFFF','#E3C3B3','#E2B0A3','#D59990','#73777B',
-    '#C26B7A','#C6251D','#FDFDFD','#F9C3BB','#82C6D8',
-    '#E6A096','#508AAB','#778FC0','#32477C','#EEDAC9',
-    '#A35149','#306752','#F5E6D3','#D4C5B9','#A8B5C0',
-    '#C9B8AD','#8B7D7A','#A89085','#F5F5F5','#E8E8E8',
-    '#D5D5D5','#B8B8B8'
+    'hsl(0,48%,85%)','hsl(22,50%,83%)','hsl(45,52%,81%)','hsl(68,45%,83%)','hsl(90,47%,82%)',
+    'hsl(112,44%,84%)','hsl(135,46%,83%)','hsl(158,42%,82%)','hsl(180,48%,83%)','hsl(202,50%,82%)',
+    'hsl(225,46%,84%)','hsl(248,43%,83%)','hsl(270,44%,82%)','hsl(292,47%,83%)','hsl(315,45%,84%)',
+    'hsl(337,48%,82%)','hsl(11,49%,84%)','hsl(33,51%,82%)','hsl(56,53%,80%)','hsl(79,46%,84%)',
+    'hsl(101,43%,85%)','hsl(124,45%,83%)','hsl(146,47%,82%)','hsl(169,44%,84%)','hsl(191,50%,83%)',
+    'hsl(214,47%,85%)','hsl(236,45%,83%)','hsl(259,46%,82%)','hsl(281,48%,84%)','hsl(304,46%,83%)',
+    'hsl(326,49%,82%)','hsl(349,51%,84%)'
   ];
   var hash=0;
   for(var i=0;i<courseName.length;i++){hash=courseName.charCodeAt(i)+((hash<<5)-hash);hash|=0;}
