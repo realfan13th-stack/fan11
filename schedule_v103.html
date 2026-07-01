@@ -2388,10 +2388,32 @@ function getClassSectionItems(){
 function renderClassSchedule(){
   const cs=appData.classSchedule,days=cs.days;
   const sections=getClassSectionItems();
-  const header=document.getElementById("classGridHeader");
-  const body=document.getElementById("classGridBody");
+  // 修复：检查当前激活的面板，只渲染对应的表格
+  const isWeeklyActive=document.getElementById("classWeekly") && document.getElementById("classWeekly").classList.contains("active");
+  const isGroupActive=document.getElementById("classGroup") && document.getElementById("classGroup").classList.contains("active");
+  
+  let header=null, body=null;
+  if(isWeeklyActive){
+    header=document.getElementById("weeklyGridHeader");
+    body=document.getElementById("weeklyGridBody");
+  } else if(isGroupActive){
+    header=document.getElementById("classGroupGridHeader");
+    body=document.getElementById("classGroupGridBody");
+  } else {
+    // 如果没有激活的面板，尝试使用 weeklyGrid（默认）
+    header=document.getElementById("weeklyGridHeader");
+    body=document.getElementById("weeklyGridBody");
+  }
+  
   const titleEl=document.getElementById("classScheduleTitle");
   if(titleEl)titleEl.textContent=appData.exportTitles&&appData.exportTitles.classSchedule?appData.exportTitles.classSchedule:"个人课程表";
+  
+  // 检查元素是否存在
+  if(!header || !body){
+    console.warn("renderClassSchedule: header or body element not found, skipping render");
+    return;
+  }
+  
   var hasItems=sections.some(function(s){return s.items.length>0;});
   if(!hasItems){
     header.innerHTML='<tr><th></th>'+days.map(function(d){return"<th>"+d+"</th>";}).join("")+"</tr>";
