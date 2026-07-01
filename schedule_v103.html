@@ -167,25 +167,6 @@ body {
   box-shadow:2px 0 8px var(--shadow);
 }
 
-/* 工作台导航条 —— 胶囊按钮风格，主页背景色 */
-.workspace-nav {
-  display:flex; gap:6px;
-  grid-column:1 / -1; /* 横跨两列 */
-  margin-bottom:clamp(8px,1vw,12px);
-}
-.ws-nav-btn {
-  flex:1;
-  padding:clamp(8px,1vw,12px) clamp(10px,1.3vw,18px);
-  border:none; background:transparent;
-  border-radius:999px;
-  cursor:pointer; font-size:clamp(12px,1.2vw,14px); font-weight:500;
-  color:#91918F; white-space:nowrap;
-  text-align:center;
-  -webkit-tap-highlight-color:transparent; font-family:inherit;
-}
-.ws-nav-btn.active {
-  background:#504E4F; color:#FFFFFF;
-}
 .overview-card {
   background:var(--card); border-radius:var(--radius); padding:clamp(10px,1.2vw,16px);
   border:1px solid var(--border); box-shadow:0 1px 4px var(--shadow);
@@ -495,7 +476,7 @@ body {
 .data-mgmt { max-width:800px; }
 .data-mgmt .section {
   background:transparent; border:1px solid var(--border); border-radius:var(--radius);
-  padding:clamp(10px,1.5vw,16px); margin-bottom:clamp(6px,0.8vw,10px);
+  padding:clamp(12px,1.8vw,20px); margin-bottom:clamp(8px,1vw,12px);
   box-shadow:none; /* 去除阴影，与主页一致 */
 }
 .data-mgmt .section-title {
@@ -753,9 +734,6 @@ body {
     grid-row:3;
     margin-top:6px;
   }
-  /* 移动端工作台导航 */
-  .workspace-nav { gap:4px; margin-bottom:8px; }
-  .ws-nav-btn { padding:8px 10px; font-size:12px; }
   .right-panel {
     padding: 10px 12px;
     position: relative;
@@ -777,9 +755,9 @@ body {
   .cd-unit { font-size:10px; }
   .class-grid-wrapper {
     background: transparent; /* 露出主页底色 --bg #F9FCF6 */
-    border-radius: 12px;
-    padding: 8px 6px;
-    margin-bottom: 8px;
+    border-radius: 16px;
+    padding: 14px 12px;
+    margin-bottom: 12px;
     box-shadow: none; /* 去除阴影，与主页一致 */
   }
   .class-grid-wrapper h3 {
@@ -1429,13 +1407,6 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
   <!-- 左侧 -->
   <aside class="left-panel" id="leftPanel">
-    <!-- 工作台导航条 -->
-    <div class="workspace-nav" id="workspaceNav">
-      <button class="ws-nav-btn active" data-wstab="home" onclick="switchTab('home')">工作台</button>
-      <button class="ws-nav-btn" data-wstab="class" onclick="switchTab('class')">课表</button>
-      <button class="ws-nav-btn" data-wstab="afterschool" onclick="switchTab('afterschool')">晚托</button>
-      <button class="ws-nav-btn" data-wstab="data" onclick="switchTab('data')">数据</button>
-    </div>
     <!-- Bento 时钟卡 (2×1) -->
     <div class="overview-card clock-card">
       <div class="clock-display">
@@ -2089,15 +2060,18 @@ function switchTab(tab){
   currentTab=tab;
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
   document.querySelectorAll(".tab-content").forEach(c=>c.classList.toggle("active",c.id==="tab"+tab.charAt(0).toUpperCase()+tab.slice(1)));
-  /* 同步工作台导航条高亮 */
-  document.querySelectorAll(".ws-nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.wstab===tab));
   var leftPanel=document.getElementById("leftPanel");
   var rightPanel=document.querySelector(".right-panel");
-  /* 所有屏幕尺寸：home标签只显示工作台区域 */
-  if(tab==="home"){
-    if(leftPanel)leftPanel.style.display="";
-    if(rightPanel)rightPanel.style.display="none";
-    try{updateMainStatus();}catch(e){}
+  var isMobile=window.matchMedia('(max-width: 768px)').matches;
+  if(isMobile){
+    if(tab==="home"){
+      if(leftPanel)leftPanel.style.display="";
+      if(rightPanel)rightPanel.style.display="none";
+      try{updateMainStatus();}catch(e){}
+    }else{
+      if(leftPanel)leftPanel.style.display="none";
+      if(rightPanel)rightPanel.style.display="";
+    }
   }else{
     if(leftPanel)leftPanel.style.display="";
     if(rightPanel)rightPanel.style.display="";
