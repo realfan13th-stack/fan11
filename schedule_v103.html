@@ -681,6 +681,13 @@ body {
   padding:clamp(12px,1.5vw,20px);
   box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
 }
+/* 周视图卡片容器 —— 与班级课表卡片样式统一 */
+.weekly-card {
+  background:#FFFFFF;
+  border-radius:16px;
+  padding:clamp(12px,1.5vw,20px);
+  box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
+}
 
 /* 主题选择器 */
 .theme-selector { display:flex; gap:clamp(8px,1.2vw,14px); flex-wrap:wrap; margin-top:8px; }
@@ -1547,12 +1554,14 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
       </div>
       <!-- 周视图 -->
       <div class="class-subpanel active" id="classWeekly">
-        <div class="weekly-header" id="weeklyHeader"></div>
-        <div class="weekly-grid-wrap">
-          <table class="weekly-grid" id="weeklyGrid">
-            <thead id="weeklyGridHeader"></thead>
-            <tbody id="weeklyGridBody"></tbody>
-          </table>
+        <div class="weekly-card">
+          <div class="weekly-header" id="weeklyHeader"></div>
+          <div class="weekly-grid-wrap">
+            <table class="weekly-grid" id="weeklyGrid">
+              <thead id="weeklyGridHeader"></thead>
+              <tbody id="weeklyGridBody"></tbody>
+            </table>
+          </div>
         </div>
         <div class="weekly-stats" id="weeklyStats"></div>
         <div class="week-bottom-nav" id="weekBottomNav">
