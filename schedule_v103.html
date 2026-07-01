@@ -689,6 +689,8 @@ body {
   border-radius:16px;
   padding:clamp(12px,1.5vw,20px);
   box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
+  display:flex;
+  flex-direction:column;
 }
 /* 晚托区卡片容器 —— 白色圆角容器 */
 .as-card {
@@ -696,14 +698,6 @@ body {
   border-radius:16px;
   padding:clamp(12px,1.5vw,20px);
   box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
-}
-/* 周视图底部卡片容器 —— 统计+导航，与周视图卡片样式统一 */
-.weekly-bottom-card {
-  background:#FFFFFF;
-  border-radius:16px;
-  padding:clamp(10px,1.2vw,16px) clamp(12px,1.5vw,20px);
-  box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
-  margin-top:clamp(8px,1vw,14px);
 }
 /* 数据管理区卡片容器 —— 白色圆角容器 */
 .data-mgmt-card {
@@ -1136,7 +1130,7 @@ body {
 #classWeekly { background: transparent; }
 
 /* 表格容器 */
-.weekly-grid-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.weekly-grid-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; flex-shrink:0; }
 .weekly-grid { 
   width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed;
   background: transparent;
@@ -1587,8 +1581,6 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
               <tbody id="weeklyGridBody"></tbody>
             </table>
           </div>
-        </div>
-        <div class="weekly-bottom-card">
           <div class="weekly-stats" id="weeklyStats"></div>
           <div class="week-bottom-nav" id="weekBottomNav">
             <button onclick="navigateWeek(-1)">&larr; 上一周</button>
