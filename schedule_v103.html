@@ -2801,6 +2801,15 @@ function renderWeekView(){
     if(emptyMsg)emptyMsg.innerHTML='<span style="color:#f59e0b;font-size:12px;">⚠ 个人课表暂无数据，请在「个人课表」标签中输入课程</span>';
   }
   
+  /* 强制重新计算样式 — 修复切换周次后色块不显示的BUG */
+  requestAnimationFrame(function(){
+    var grid=document.getElementById("weeklyGrid");
+    if(grid){
+      grid.style.display='none';
+      grid.offsetHeight; // 触发reflow
+      grid.style.display='';
+    }
+  });
 }
 // 关闭周视图弹窗
 function closeWeekCellPopup(){
@@ -2936,19 +2945,11 @@ function goToWeekDate(){
   updateDotIndicators();
 }
 function navigateWeek(delta){
-  console.log("[navigateWeek] called with delta="+delta+", weeklyWeekOffset was="+weeklyWeekOffset);
   weeklyWeekOffset+=delta;
-  console.log("[navigateWeek] weeklyWeekOffset now="+weeklyWeekOffset);
-  if(typeof renderWeekView==="function"){
-    console.log("[navigateWeek] calling renderWeekView()");
-    renderWeekView();
-    console.log("[navigateWeek] renderWeekView() completed");
-  }else{
-    console.error("[navigateWeek] renderWeekView is not a function!");
-  }
-  if(typeof renderClassSchedule==="function")renderClassSchedule();
-  if(typeof renderClassGroupWeekView==="function")renderClassGroupWeekView();
-  if(typeof updateDotIndicators==="function")updateDotIndicators();
+  renderWeekView();
+  renderClassSchedule();
+  renderClassGroupWeekView();
+  updateDotIndicators();
 }
 function updateDotIndicators(){
   var subDot=document.getElementById("subDotIndicator");
