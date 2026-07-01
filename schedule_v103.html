@@ -574,30 +574,20 @@ body {
 
 /* 数据管理子tab —— 横向长条样式 */
 .dm-subtabs {
-  display:flex; gap:0; margin-bottom:0;
-  background:var(--card); border-bottom:1px solid var(--border);
-  border-radius:12px 12px 0 0; overflow:hidden;
+  display:flex; gap:8px; margin-bottom:clamp(12px,1.5vw,20px);
 }
 .dm-subtab {
-  flex:1;
-  padding:clamp(12px,1.5vw,16px) clamp(8px,1.5vw,16px);
-  border:none; background:transparent; border-radius:0;
-  cursor:pointer; font-size:clamp(13px,1.4vw,15px); font-weight:500;
-  color:#86868B; transition:0.2s ease; white-space:nowrap;
-  text-align:center; position:relative;
-  -webkit-tap-highlight-color:transparent;
-}
-.dm-subtab::after {
-  content:''; position:absolute; bottom:0; left:50%;
-  transform:translateX(-50%); width:0; height:2.5px;
-  background:var(--accent); border-radius:2px; transition:width 0.25s ease;
+  padding:clamp(10px,1.3vw,14px) clamp(18px,2.5vw,32px);
+  border:none; background:transparent;
+  border-radius:999px;
+  cursor:pointer; font-size:clamp(14px,1.4vw,16px); font-weight:500;
+  color:#000000; white-space:nowrap;
+  text-align:center;
+  -webkit-tap-highlight-color:transparent; font-family:inherit;
 }
 .dm-subtab.active {
-  opacity:1; background:transparent; color:#1D1D1F;
-  font-weight:600; border-color:transparent;
+  background:#000000; color:#FFFFFF;
 }
-.dm-subtab.active::after { width:60%; }
-.dm-subtab:hover:not(.active) { color:#1D1D1F; background:rgba(0,0,0,0.03); }
 .dm-panel { display:none; }
 .dm-panel.active { display:block; }
 
@@ -618,32 +608,22 @@ body {
 }
 .season-toggle button:hover:not(.active) { color:#1D1D1F; }
 
-/* 课表子tab —— 横向长条样式，与 DM 子 tab 一致 */
+/* 课表子tab —— 黑色胶囊风格 */
 .class-subtabs {
-  display:flex; gap:0; margin-bottom:clamp(10px,1.2vw,16px);
-  background:var(--card); border-bottom:1px solid var(--border);
-  border-radius:12px 12px 0 0; overflow:hidden;
+  display:flex; gap:8px; margin-bottom:clamp(12px,1.5vw,20px);
 }
 .class-subtab {
-  flex:1;
-  padding:clamp(12px,1.5vw,16px) clamp(8px,1.5vw,16px);
-  border:none; background:transparent; border-radius:0;
-  cursor:pointer; font-size:clamp(13px,1.4vw,15px); font-weight:500;
-  color:#86868B; transition:0.2s ease; white-space:nowrap;
-  text-align:center; position:relative; opacity:1;
-  -webkit-tap-highlight-color:transparent;
-}
-.class-subtab::after {
-  content:''; position:absolute; bottom:0; left:50%;
-  transform:translateX(-50%); width:0; height:2.5px;
-  background:var(--accent); border-radius:2px; transition:width 0.25s ease;
+  padding:clamp(10px,1.3vw,14px) clamp(18px,2.5vw,32px);
+  border:none; background:transparent;
+  border-radius:999px;
+  cursor:pointer; font-size:clamp(14px,1.4vw,16px); font-weight:500;
+  color:#000000; white-space:nowrap;
+  text-align:center;
+  -webkit-tap-highlight-color:transparent; font-family:inherit;
 }
 .class-subtab.active {
-  background:transparent; color:#1D1D1F;
-  font-weight:600; border-color:transparent;
+  background:#000000; color:#FFFFFF;
 }
-.class-subtab.active::after { width:60%; }
-.class-subtab:hover:not(.active) { color:#1D1D1F; background:rgba(0,0,0,0.03); }
 .class-subpanel { display:none; }
 .class-subpanel.active { display:block; }
 
@@ -805,10 +785,8 @@ body {
   .as-legend-item { font-size:clamp(11px,1.3vw,13px); }
   .as-legend-days, .as-legend-days-total { font-size:11px; }
   /* 移动端按钮触摸区域增大 */
-  .dm-subtab { padding:12px 10px; min-height:44px; }
-  .dm-subtab:active { opacity:0.6; }
-  .class-subtab { padding:12px 8px; min-height:44px; }
-  .class-subtab:active { opacity:0.6; }
+  .dm-subtab { padding:10px 16px; }
+  .class-subtab { padding:10px 14px; }
   .month-tab { padding:8px 12px; min-height:38px; font-size:12px; }
   .month-tab:active { opacity:0.6; }
   .data-mgmt .btn { padding:6px 14px; min-height:36px; }
@@ -818,7 +796,7 @@ body {
 
   .schedule-item { padding:6px clamp(8px,1vw,12px); }
   /* 移动端触摸反馈 */
-  .dm-subtab:active, .month-tab:active, .btn:active { opacity:0.6; transform:scale(0.97); }
+  .month-tab:active, .btn:active { opacity:0.6; transform:scale(0.97); }
   .season-toggle button { padding:8px 16px; min-height:38px; }
   .season-toggle button:active { opacity:0.6; }
   /* 移动端日期选择框窄化 */
