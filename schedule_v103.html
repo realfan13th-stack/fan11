@@ -145,7 +145,8 @@ body {
 }
 /* 确保子tab在顶部栏中靠左显示 */
 .top-bar-dynamic .class-subtabs,
-.top-bar-dynamic .dm-subtabs { justify-content:flex-start; margin-bottom:0; }
+.top-bar-dynamic .dm-subtabs,
+.top-bar-dynamic .as-subtabs { justify-content:flex-start; margin-bottom:0; }
 /* 右侧面板背景变灰色（通过JS添加class控制） */
 .right-panel--gray-bg { background:#F5F5F7 !important; }
 /* 移动端适配：顶部栏显示子tab时 */
@@ -695,6 +696,14 @@ body {
   border-radius:16px;
   padding:clamp(12px,1.5vw,20px);
   box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
+}
+/* 周视图底部卡片容器 —— 统计+导航，与周视图卡片样式统一 */
+.weekly-bottom-card {
+  background:#FFFFFF;
+  border-radius:16px;
+  padding:clamp(10px,1.2vw,16px) clamp(12px,1.5vw,20px);
+  box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
+  margin-top:clamp(8px,1vw,14px);
 }
 /* 数据管理区卡片容器 —— 白色圆角容器 */
 .data-mgmt-card {
@@ -1321,7 +1330,7 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   .week-card { border-radius:7px; padding:4px 2px; height:30px; width:100%; }
   .week-card .wc-name { font-size:11px; }
   .week-card .wc-class { font-size:9px; }
-  .wk-empty-cell { min-height:30px; background:transparent; }
+  .wk-empty-cell { min-height:30px; height:30px; background:transparent; box-sizing:border-box; }
 
   /* 节次标签移动端 - 无背景 */
   .period-label-num { padding:2px 4px; font-size:11px; min-width:20px; border-radius:0; background:transparent; }
@@ -1351,7 +1360,7 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   .week-card { border-radius:10px; padding:6px 4px; height:42px; }
   .week-card .wc-name { font-size:14px; }
   .week-card .wc-class { font-size:11px; }
-  .wk-empty-cell { min-height:42px; background:transparent; border-radius:10px; }
+  .wk-empty-cell { min-height:42px; height:42px; background:transparent; border-radius:10px; box-sizing:border-box; }
 
   /* 节次标签桌面端 - 无背景 */
   .period-label-num { padding:3px 7px; font-size:14px; min-width:28px; border-radius:0; background:transparent; }
@@ -1579,11 +1588,13 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
             </table>
           </div>
         </div>
-        <div class="weekly-stats" id="weeklyStats"></div>
-        <div class="week-bottom-nav" id="weekBottomNav">
-          <button onclick="navigateWeek(-1)">&larr; 上一周</button>
-          <button id="weekNavCurrent" class="active" disabled>● 本周</button>
-          <button onclick="navigateWeek(1)">下一周 &rarr;</button>
+        <div class="weekly-bottom-card">
+          <div class="weekly-stats" id="weeklyStats"></div>
+          <div class="week-bottom-nav" id="weekBottomNav">
+            <button onclick="navigateWeek(-1)">&larr; 上一周</button>
+            <button id="weekNavCurrent" class="active" disabled>● 本周</button>
+            <button onclick="navigateWeek(1)">下一周 &rarr;</button>
+          </div>
         </div>
       </div>
       <!-- 班级课表 -->
@@ -1602,11 +1613,11 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
     <!-- 晚托 -->
     <div class="tab-content" id="tabAfterschool">
+      <div class="as-subtabs" id="asSubtabs">
+        <button class="as-subtab active" data-as="calendar" onclick="switchAfterschoolTab('calendar')">托管表</button>
+      </div>
       <div class="as-card">
         <div class="afterschool-header">
-          <div class="as-subtabs" id="asSubtabs">
-            <button class="as-subtab active" data-as="calendar" onclick="switchAfterschoolTab('calendar')">托管表</button>
-          </div>
           <div id="semesterBar" style="margin-bottom:8px;font-size:clamp(12px,1.2vw,14px);"></div>
         </div>
         <div class="month-tabs-container">
@@ -2142,6 +2153,7 @@ function switchTab(tab){
   // 恢复子tab到原始位置（如果之前被移动过）
   var classSubtabs=document.getElementById("classSubtabs");
   var dmSubtabs=document.getElementById("dmSubtabs");
+  var asSubtabs=document.getElementById("asSubtabs");
   if(classSubtabs && classSubtabs.parentElement.id==="topBarDynamic"){
     var tabClass=document.getElementById("tabClass");
     if(tabClass)tabClass.insertAdjacentElement("afterbegin",classSubtabs);
@@ -2149,6 +2161,10 @@ function switchTab(tab){
   if(dmSubtabs && dmSubtabs.parentElement.id==="topBarDynamic"){
     var dmData=document.querySelector("#tabData .data-mgmt");
     if(dmData)dmData.insertAdjacentElement("afterbegin",dmSubtabs);
+  }
+  if(asSubtabs && asSubtabs.parentElement.id==="topBarDynamic"){
+    var tabAfterschool=document.getElementById("tabAfterschool");
+    if(tabAfterschool)tabAfterschool.insertAdjacentElement("afterbegin",asSubtabs);
   }
   // 根据tab切换顶部栏显示和右侧面板背景
   if(tab==="home"){
@@ -2160,7 +2176,8 @@ function switchTab(tab){
     if(classSubtabs)topBarDynamic.appendChild(classSubtabs);
     if(rightPanel)rightPanel.classList.add("right-panel--gray-bg");
   }else if(tab==="afterschool"){
-    topBar.classList.remove("top-bar--show-dynamic");
+    topBar.classList.add("top-bar--show-dynamic");
+    if(asSubtabs)topBarDynamic.appendChild(asSubtabs);
     topBarTitle.style.display="none";
     if(rightPanel)rightPanel.classList.add("right-panel--gray-bg");
   }else if(tab==="data"){
@@ -2189,6 +2206,31 @@ function switchTab(tab){
   }
   if(tab==="afterschool")renderAfterSchool();
   if(tab==="data")initDataManagement();
+  // 移动端优化：调整右侧面板最大高度，避免无限下滑
+  adjustMobilePanelHeight();
+}
+/* 移动端优化：调整右侧面板最大高度 */
+function adjustMobilePanelHeight(){
+  if(window.innerWidth > 768)return; // 仅在移动端执行
+  var rightPanel=document.querySelector('.right-panel');
+  if(!rightPanel)return;
+  var viewportH=window.innerHeight;
+  var topBar=document.querySelector('.top-bar');
+  var bottomBar=document.querySelector('.pwa-bottom-bar');
+  var topH=topBar?topBar.offsetHeight:0;
+  var bottomH=bottomBar?bottomBar.offsetHeight:0;
+  // 计算可用高度，留出一些边距
+  var maxH=viewportH - topH - bottomH - 8;
+  rightPanel.style.maxHeight=maxH+'px';
+  rightPanel.style.overflowY='auto';
+}
+// 监听窗口大小变化，重新计算高度
+window.addEventListener('resize',adjustMobilePanelHeight);
+// 页面加载完成后执行一次
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',adjustMobilePanelHeight);
+}else{
+  adjustMobilePanelHeight();
 }
 function switchDM(dm){
   currentDM=dm;
