@@ -1,7 +1,7 @@
 {
-  "name": "教师作息工作台",
-  "short_name": "工作台",
-  "description": "教师个人作息管理与课表工作台",
+  "name": "教师作息小课表",
+  "short_name": "小课表",
+  "description": "教师个人作息管理与课表小课表",
   "start_url": "./schedule_v103.html",
   "scope": "./",
   "display": "standalone",

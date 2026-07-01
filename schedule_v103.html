@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<!-- 作者：kaifan，103404628 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>工作台</title>
+<title>小课表</title>
 <!-- PWA Meta Tags -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="工作台">
+<meta name="apple-mobile-web-app-title" content="小课表">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#4E648A">
-<meta name="description" content="教师个人作息管理与课表工作台">
+<meta name="description" content="教师个人作息管理与课表小课表">
 <link rel="manifest" href="manifest.json">
 <!-- All libraries embedded inline — single file, no external dependencies -->
 <!-- html2canvas v1.4.1 + SheetJS xlsx.full.min -->
@@ -155,14 +156,14 @@ body {
   body { min-height:100vh; min-height:100dvh; }
 }
 .title-edit {
-  font-size:clamp(18px,2vw,22px); font-weight:700; cursor:pointer;
+  font-size:clamp(20px,2.2vw,24px); font-weight:700; cursor:pointer;
   padding:4px 8px; border-radius:6px; user-select:none;
   display:flex; align-items:center; gap:6px;
 }
 .title-edit:hover { background:rgba(0,0,0,0.06); }
 .title-edit .edit-icon { font-size:clamp(10px,1.2vw,14px); opacity:0.5; }
 .title-input {
-  font-size:clamp(14px,2vw,20px); font-weight:700;
+  font-size:clamp(16px,2.2vw,22px); font-weight:700;
   background:#F5F5F7; border:2px solid rgba(0,0,0,0.15);
   color:#1D1D1F; padding:4px 10px; border-radius:6px; outline:none; width:clamp(160px,30vw,280px);
 }
@@ -410,7 +411,7 @@ body {
 /* 晚托月份选择 —— 横向长条滚动设计，与数据TAB风格统一 */
 .month-tabs {
   display:flex; gap:0; flex-wrap:nowrap; overflow-x:auto;
-  background:var(--card); border-bottom:1px solid var(--border);
+  background:transparent; border-bottom:1px solid var(--border);
   border-radius:10px 10px 0 0;
   scrollbar-width:none; -ms-overflow-style:none;
   -webkit-overflow-scrolling:touch;
@@ -610,6 +611,24 @@ body {
 }
 .dm-subtab.active {
   background:#504E4F; color:#FFFFFF;
+}
+/* 晚托区subtabs —— 与数据管理区风格统一 */
+.as-subtabs {
+  display:flex; gap:8px; margin-bottom:clamp(8px,1vw,14px);
+}
+.as-subtab {
+  padding:clamp(8px,1.1vw,12px) clamp(14px,2vw,24px);
+  border:none; background:transparent;
+  border-radius:999px;
+  cursor:pointer; font-size:clamp(13px,1.3vw,15px); font-weight:500;
+  color:#91918F; white-space:nowrap;
+  transition:0.2s ease;
+}
+.as-subtab.active {
+  background:#504E4F; color:#FFFFFF;
+}
+.as-subtab:hover:not(.active) {
+  background:rgba(0,0,0,0.05);
 }
 .dm-panel { display:none; }
 .dm-panel.active { display:block; }
@@ -1412,7 +1431,7 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   <div class="top-bar-title" id="topBarTitle">
     <div style="display:flex;align-items:center;gap:8px;">
       <span class="title-edit" id="titleDisplay" onclick="startTitleEdit()">
-        <span id="titleText">工作台</span>
+        <span id="titleText">小课表</span>
       </span>
       <input type="text" class="title-input" id="titleInput"
              style="display:none;" onblur="saveTitle()"
@@ -1544,6 +1563,9 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
     <!-- 晚托 -->
     <div class="tab-content" id="tabAfterschool">
       <div class="afterschool-header">
+        <div class="as-subtabs" id="asSubtabs">
+          <button class="as-subtab active" data-as="calendar" onclick="switchAfterschoolTab('calendar')">托管表</button>
+        </div>
         <div id="semesterBar" style="margin-bottom:8px;font-size:clamp(12px,1.2vw,14px);"></div>
         <div class="month-tabs" id="monthTabs"></div>
       </div>
@@ -2123,6 +2145,14 @@ function switchClassTab(tab){
   else if(tab==="group"){if(typeof renderClassGroupWeekView==="function")renderClassGroupWeekView();}
 }
 var currentClassTab="weekly";
+/* 晚托区tab切换 —— 当前"托管表"为占位符，后续扩展 */
+var currentAfterschoolTab="calendar";
+function switchAfterschoolTab(tab){
+  currentAfterschoolTab=tab;
+  document.querySelectorAll(".as-subtab").forEach(b=>b.classList.toggle("active",b.dataset.as===tab));
+  // TODO: 后续实现托管表功能
+  console.log("晚托tab已切换到:",tab);
+}
 function setScheduleType(type){
   currentScheduleType=type;editScheduleMode=type;
   renderClassSchedule();renderSchedule();updateMainStatus();saveData();
@@ -2443,18 +2473,21 @@ function getCellDotHTML(dayName,itemId,globalIdx){
 // ============================================================
 // 8.6 周视图渲染（卡片化升级 — 粉彩卡片 + 透明空单元格 + 底部胶囊导航）
 // ============================================================
-/* 学科粉彩色生成器 —— 16色调预定义色盘，色相均匀分布，饱和度40-55%，明度75-84%，确保学科间视觉区分明显 */
+/* 学科莫兰迪色生成器 —— 32色调预定义色盘，基于用户提供的莫兰迪色系，确保学科间视觉区分明显 */
 function getSubjectColor(courseName){
-  if(!courseName)return'hsl(210,45%,82%)';
+  if(!courseName)return'#B7D0D4';
   var palette=[
-    'hsl(0,48%,80%)',    'hsl(22,50%,78%)',   'hsl(45,52%,76%)',   'hsl(68,45%,78%)',
-    'hsl(90,47%,77%)',   'hsl(112,44%,79%)',  'hsl(135,46%,78%)',  'hsl(158,42%,77%)',
-    'hsl(180,48%,78%)',  'hsl(202,50%,77%)',  'hsl(225,46%,79%)',  'hsl(248,43%,78%)',
-    'hsl(270,44%,77%)',  'hsl(292,47%,78%)',  'hsl(315,45%,79%)',  'hsl(337,48%,77%)'
+    '#FFFEFC','#B7D0D4','#BBAA9F','#D8CBB9','#ECB6A2',
+    '#FFFFFF','#E3C3B3','#E2B0A3','#D59990','#73777B',
+    '#C26B7A','#C6251D','#FDFDFD','#F9C3BB','#82C6D8',
+    '#E6A096','#508AAB','#778FC0','#32477C','#EEDAC9',
+    '#A35149','#306752','#F5E6D3','#D4C5B9','#A8B5C0',
+    '#C9B8AD','#8B7D7A','#A89085','#F5F5F5','#E8E8E8',
+    '#D5D5D5','#B8B8B8'
   ];
   var hash=0;
   for(var i=0;i<courseName.length;i++){hash=courseName.charCodeAt(i)+((hash<<5)-hash);hash|=0;}
-  return palette[Math.abs(hash%16)];
+  return palette[Math.abs(hash%32)];
 }
 /* 从 Monday 日期字符串构造晚托 wkKey ("YYYY-MM-wR") */
 function getWeekKeyFromMonday(mondayStr){
@@ -3556,7 +3589,7 @@ function startTitleEdit(){
 }
 function saveTitle(){
   const i=document.getElementById("titleInput"),d=document.getElementById("titleDisplay"),t=document.getElementById("titleText");
-  const v=i.value.trim()||"工作台";
+  const v=i.value.trim()||"小课表";
   t.textContent=v;i.style.display="none";d.style.display="inline-flex";appData.platformTitle=v;document.title=v;saveData();
 }
 function cancelTitleEdit(){
@@ -3774,7 +3807,7 @@ function doXLSX(){
   var u8d=(d instanceof Uint8Array)?d:new Uint8Array(d);
   var blob=new Blob([u8d],{type:"application/octet-stream"});
   console.log("[DEBUG] Blob size:",blob.size);
-  var fn=(appData&&appData.teacherName?appData.teacherName:"教师")+"_工作台.xlsx";
+  var fn=(appData&&appData.teacherName?appData.teacherName:"教师")+"_小课表.xlsx";
   showImportStatus("Excel 已生成","success");
   downloadBlob(blob,fn);
 }
@@ -4394,7 +4427,7 @@ function backupData(){
     var url=URL.createObjectURL(blob);
     var a=document.createElement("a");
     a.href=url;
-    a.download="工作台数据备份_"+(new Date().toISOString().slice(0,10))+".json";
+    a.download="小课表数据备份_"+(new Date().toISOString().slice(0,10))+".json";
     a.click();
     URL.revokeObjectURL(url);
     showImportStatus("数据备份已下载","success");
@@ -5188,9 +5221,9 @@ function getExportMonths(startDate,endDate){
     var _pageUrl = location.href.split('#')[0].split('?')[0];
     var _scopeUrl = _pageUrl.substring(0, _pageUrl.lastIndexOf('/') + 1);
     var manifest = {
-      name: '教师作息工作台',
-      short_name: '工作台',
-      description: '教师个人作息管理与课表工作台',
+      name: '教师作息小课表',
+      short_name: '小课表',
+      description: '教师个人作息管理与课表小课表',
       start_url: _pageUrl,
       scope: _scopeUrl,
       display: 'standalone',
@@ -5281,7 +5314,7 @@ function getExportMonths(startDate,endDate){
       '        return new Response(',
       '          "<!DOCTYPE html><html><head><meta charset=utf-8>" +',
       '          "<meta name=viewport content=\\"width=device-width,initial-scale=1\\">" +',
-      '          "<title>工作台 - 离线</title><style>" +',
+      '          "<title>小课表 - 离线</title><style>" +',
       '          "body{font-family:system-ui,sans-serif;display:flex;align-items:center;" +',
       '          "justify-content:center;height:100vh;margin:0;background:#F9FCF6;color:#4E648A}" +',
       '          ".card{text-align:center;padding:48px 32px;border-radius:16px;background:#fff;" +',
@@ -5391,7 +5424,7 @@ function getExportMonths(startDate,endDate){
         '<span style="font-size:24px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>',
         '<div>',
           '<div style="font-weight:600;font-size:14px;">添加到主屏幕</div>',
-          '<div style="font-size:12px;opacity:.8;">像App一样使用工作台</div>',
+          '<div style="font-size:12px;opacity:.8;">像App一样使用小课表</div>',
         '</div>',
       '</div>',
       '<div style="display:flex;gap:8px;">',
