@@ -2426,20 +2426,59 @@ function renderClassSchedule(){
   header.innerHTML=hHtml;
   let bHtml="";
   var globalIdx=0;
+  var weekDates=getWeekDates(weeklyWeekOffset);
+  var subs=appData.substitutions||[];
+  var swps=appData.swaps||[];
   sections.forEach(function(sec,si){
     bHtml+='<tr class="section-divider"><td colspan="'+(days.length+1)+'">'+sec.sectionName+"</td></tr>";
     sec.items.forEach(function(it){
       const label=String(globalIdx+1);
       bHtml+='<tr><td class="period-label">'+label+'</td>';
       days.forEach(function(d){
+        var dateKey=weekDates[d];
+        if(!dateKey){bHtml+='<td class="empty"></td>';return;}
         const cell=cs.grid[d]?cs.grid[d][it.id]:null;
-        if(cell){
-          const parsed=parseCourseCell(cell);
+        var displayCourse=cell||"";
+        // Swap logic
+        var isSwappedOut=false,isSwappedIn=false,swappedInCourse="";
+        for(var si=0;si<swps.length;si++){
+          var swp=swps[si];
+          if(swp.date===dateKey&&swp.myPeriodItemId===it.id){isSwappedOut=true;break;}
+        }
+        if(!isSwappedOut){
+          for(var si2=0;si2<swps.length;si2++){
+            var swp2=swps[si2];
+            if((swp2.theirDate||swp2.date)===dateKey&&swp2.theirPeriodItemId===it.id){
+              isSwappedIn=true;swappedInCourse=swp2.theirOriginal||"";break;
+            }
+          }
+        }
+        if(isSwappedOut)displayCourse="";
+        else if(isSwappedIn)displayCourse=swappedInCourse;
+        // Sub
+        var isSub=false,subCourse="";
+        for(var si3=0;si3<subs.length;si3++){
+          if(subs[si3].date===dateKey&&subs[si3].periodItemId===it.id){isSub=true;subCourse=subs[si3].substituteClass||"";break;}
+        }
+        var finalDisplay=isSub?subCourse:displayCourse;
+        // 渲染单元格
+        if(finalDisplay){
+          const parsed=parseCourseCell(finalDisplay);
           const cls=getSubjectClassVal(parsed.main),isC=isClassNow(d,globalIdx);
-          bHtml+='<td class="'+cls+(isC?" current":"")+'"><span class="course-name">'+parsed.main+'</span>';
+          var dotStr="";
+          if(isSub)dotStr+='<span class="cell-dot sub-dot"></span>';
+          if(isSwappedOut)dotStr+='<span class="cell-dot swp-out-dot">×</span>';
+          else if(isSwappedIn)dotStr+='<span class="cell-dot swp-dot"></span>';
+          bHtml+='<td class="'+cls+(isC?" current":"")+'">'+dotStr+'<span class="course-name">'+parsed.main+'</span>';
           if(parsed.sub)bHtml+='<span class="course-class">\uff08'+parsed.sub+'\uff09</span>';
           bHtml+="</td>";
-        }else{bHtml+='<td class="empty"></td>';}
+        }else{
+          var dotStr="";
+          if(isSub)dotStr+='<span class="cell-dot sub-dot"></span>';
+          if(isSwappedOut)dotStr+='<span class="cell-dot swp-out-dot">×</span>';
+          else if(isSwappedIn)dotStr+='<span class="cell-dot swp-dot"></span>';
+          bHtml+='<td class="empty">'+dotStr+'</td>';
+        }
       });
       bHtml+="</tr>";
       globalIdx++;
@@ -3049,12 +3088,9 @@ function openSubModal(idx){
       renderClassSchedule();
       renderClassGroupWeekView();
       if(currentClassTab==="weekly")renderWeekView();
-      // 使用 setTimeout 确保渲染完成后再关闭弹窗
-      setTimeout(function(){
-        var overlayToRemove=document.querySelector(".ss-modal-overlay");
-        if(overlayToRemove)overlayToRemove.remove();
-      }, 100);
       showImportStatus("代课记录已保存","success");
+      // 直接关闭弹窗
+      setTimeout(function(){overlay.remove();}, 100);
     } catch(e) {
       console.error("保存代课时出错:", e);
       showImportStatus("保存失败: "+e.message, "error");
@@ -3153,12 +3189,9 @@ function openSwapModal(idx){
       renderClassSchedule();
       renderClassGroupWeekView();
       if(currentClassTab==="weekly")renderWeekView();
-      // 使用 setTimeout 确保渲染完成后再关闭弹窗
-      setTimeout(function(){
-        var overlayToRemove=document.querySelector(".ss-modal-overlay");
-        if(overlayToRemove)overlayToRemove.remove();
-      }, 100);
       showImportStatus("换课记录已保存","success");
+      // 直接关闭弹窗
+      setTimeout(function(){overlay.remove();}, 100);
     } catch(e) {
       console.error("保存换课时出错:", e);
       showImportStatus("保存失败: "+e.message, "error");
