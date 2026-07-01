@@ -132,6 +132,26 @@ body {
   padding:calc(12px + var(--safe-area-top, 0px)) clamp(8px,2vw,24px) 12px clamp(8px,2vw,24px);
   display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
 }
+.top-bar-title { display:flex; align-items:center; }
+.top-bar-dynamic { display:none; width:100%; }
+.top-bar-dynamic .class-subtabs,
+.top-bar-dynamic .dm-subtabs { margin-bottom:0; }
+.top-bar--show-dynamic .top-bar-title { display:none; }
+.top-bar--show-dynamic .top-bar-dynamic { display:flex; align-items:center; }
+@media (min-width:769px) {
+  .top-bar--show-dynamic { justify-content:center; }
+  .top-bar--show-dynamic .top-bar-dynamic { width:auto; }
+}
+/* 确保子tab在顶部栏中居中显示 */
+.top-bar-dynamic .class-subtabs,
+.top-bar-dynamic .dm-subtabs { justify-content:center; margin-bottom:0; }
+/* 右侧面板背景变灰色（通过JS添加class控制） */
+.right-panel--gray-bg { background:#F5F5F7 !important; }
+/* 移动端适配：顶部栏显示子tab时 */
+@media (max-width:768px){
+  .top-bar--show-dynamic { padding-bottom:8px; }
+  .top-bar--show-dynamic .top-bar-dynamic { justify-content:center; }
+}
 .title-edit {
   font-size:clamp(18px,2vw,22px); font-weight:700; cursor:pointer;
   padding:4px 8px; border-radius:6px; user-select:none;
@@ -1389,17 +1409,20 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 <body>
 
 <!-- ==================== 顶部 ==================== -->
-<header class="top-bar">
-  <div style="display:flex;align-items:center;gap:8px;">
-    <span class="title-edit" id="titleDisplay" onclick="startTitleEdit()">
-      <span id="titleText">工作台</span>
-    </span>
-    <input type="text" class="title-input" id="titleInput"
-           style="display:none;" onblur="saveTitle()"
-           onkeydown="if(event.key==='Enter')saveTitle();if(event.key==='Escape')cancelTitleEdit();">
+<header class="top-bar" id="topBar">
+  <!-- 主页标题（仅主页显示） -->
+  <div class="top-bar-title" id="topBarTitle">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="title-edit" id="titleDisplay" onclick="startTitleEdit()">
+        <span id="titleText">工作台</span>
+      </span>
+      <input type="text" class="title-input" id="titleInput"
+             style="display:none;" onblur="saveTitle()"
+             onkeydown="if(event.key==='Enter')saveTitle();if(event.key==='Escape')cancelTitleEdit();">
+    </div>
   </div>
-
-
+  <!-- 动态区域（课表/数据tab时显示子tab按钮） -->
+  <div class="top-bar-dynamic" id="topBarDynamic"></div>
 </header>
 
 <!-- ==================== 主内容 ==================== -->
@@ -2062,6 +2085,38 @@ function switchTab(tab){
   document.querySelectorAll(".tab-content").forEach(c=>c.classList.toggle("active",c.id==="tab"+tab.charAt(0).toUpperCase()+tab.slice(1)));
   var leftPanel=document.getElementById("leftPanel");
   var rightPanel=document.querySelector(".right-panel");
+  var topBar=document.getElementById("topBar");
+  var topBarTitle=document.getElementById("topBarTitle");
+  var topBarDynamic=document.getElementById("topBarDynamic");
+  // 恢复子tab到原始位置（如果之前被移动过）
+  var classSubtabs=document.getElementById("classSubtabs");
+  var dmSubtabs=document.getElementById("dmSubtabs");
+  if(classSubtabs && classSubtabs.parentElement.id==="topBarDynamic"){
+    var tabClass=document.getElementById("tabClass");
+    if(tabClass)tabClass.insertAdjacentElement("afterbegin",classSubtabs);
+  }
+  if(dmSubtabs && dmSubtabs.parentElement.id==="topBarDynamic"){
+    var dmData=document.querySelector("#tabData .data-mgmt");
+    if(dmData)dmData.insertAdjacentElement("afterbegin",dmSubtabs);
+  }
+  // 根据tab切换顶部栏显示和右侧面板背景
+  if(tab==="home"){
+    topBar.classList.remove("top-bar--show-dynamic");
+    topBarTitle.style.display="";
+    if(rightPanel)rightPanel.classList.remove("right-panel--gray-bg");
+  }else if(tab==="class"){
+    topBar.classList.add("top-bar--show-dynamic");
+    if(classSubtabs)topBarDynamic.appendChild(classSubtabs);
+    if(rightPanel)rightPanel.classList.add("right-panel--gray-bg");
+  }else if(tab==="afterschool"){
+    topBar.classList.remove("top-bar--show-dynamic");
+    topBarTitle.style.display="none";
+    if(rightPanel)rightPanel.classList.add("right-panel--gray-bg");
+  }else if(tab==="data"){
+    topBar.classList.add("top-bar--show-dynamic");
+    if(dmSubtabs)topBarDynamic.appendChild(dmSubtabs);
+    if(rightPanel)rightPanel.classList.add("right-panel--gray-bg");
+  }
   var isMobile=window.matchMedia('(max-width: 768px)').matches;
   if(isMobile){
     if(tab==="home"){
