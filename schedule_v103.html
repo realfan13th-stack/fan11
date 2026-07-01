@@ -616,16 +616,18 @@ body {
 .dm-subtab.active {
   background:#504E4F; color:#FFFFFF;
 }
-/* 晚托区subtabs —— 与数据管理区风格统一 */
+/* 晚托区subtabs —— 与课表区、数据管理区风格统一 */
 .as-subtabs {
-  display:flex; gap:8px; margin-bottom:clamp(8px,1vw,14px);
+  display:flex; gap:8px; margin-bottom:clamp(12px,1.5vw,20px);
 }
 .as-subtab {
-  padding:clamp(8px,1.1vw,12px) clamp(14px,2vw,24px);
+  padding:clamp(10px,1.3vw,14px) clamp(18px,2.5vw,32px);
   border:none; background:transparent;
   border-radius:999px;
-  cursor:pointer; font-size:clamp(13px,1.3vw,15px); font-weight:500;
+  cursor:pointer; font-size:clamp(14px,1.4vw,16px); font-weight:500;
   color:#91918F; white-space:nowrap;
+  text-align:center;
+  -webkit-tap-highlight-color:transparent; font-family:inherit;
   transition:0.2s ease;
 }
 .as-subtab.active {
