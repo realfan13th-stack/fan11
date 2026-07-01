@@ -2800,6 +2800,15 @@ function renderWeekView(){
     var emptyMsg=document.getElementById("weeklyStats");
     if(emptyMsg)emptyMsg.innerHTML='<span style="color:#f59e0b;font-size:12px;">⚠ 个人课表暂无数据，请在「个人课表」标签中输入课程</span>';
   }
+  
+  /* 调试信息：输出渲染的HTML片段，检查是否正确生成了week-card */
+  if(typeof console!=="undefined"&&console.log){
+    var gridBody=document.getElementById("weeklyGridBody");
+    if(gridBody){
+      var hasWeekCard=gridBody.innerHTML.indexOf("week-card")>=0;
+      console.log("[renderWeekView] weeklyWeekOffset="+weeklyWeekOffset+", hasWeekCard="+hasWeekCard+", bodyHtml length="+bodyHtml.length);
+    }
+  }
 }
 // 关闭周视图弹窗
 function closeWeekCellPopup(){
