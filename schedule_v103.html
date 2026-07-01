@@ -142,15 +142,17 @@ body {
   .top-bar--show-dynamic { justify-content:center; }
   .top-bar--show-dynamic .top-bar-dynamic { width:auto; }
 }
-/* 确保子tab在顶部栏中居中显示 */
+/* 确保子tab在顶部栏中靠左显示 */
 .top-bar-dynamic .class-subtabs,
-.top-bar-dynamic .dm-subtabs { justify-content:center; margin-bottom:0; }
+.top-bar-dynamic .dm-subtabs { justify-content:flex-start; margin-bottom:0; }
 /* 右侧面板背景变灰色（通过JS添加class控制） */
 .right-panel--gray-bg { background:#F5F5F7 !important; }
 /* 移动端适配：顶部栏显示子tab时 */
 @media (max-width:768px){
   .top-bar--show-dynamic { padding-bottom:8px; }
-  .top-bar--show-dynamic .top-bar-dynamic { justify-content:center; }
+  .top-bar--show-dynamic .top-bar-dynamic { justify-content:flex-start; padding-left:12px; }
+  /* 优化移动端空白区域：使用动态视口高度，添加回退方案 */
+  body { min-height:100vh; min-height:100dvh; }
 }
 .title-edit {
   font-size:clamp(18px,2vw,22px); font-weight:700; cursor:pointer;
@@ -1693,10 +1695,6 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
         <!-- 导出 -->
         <div class="dm-panel" id="dmTheme">
           <div class="section">
-            <div class="section-title">选择主题色</div>
-            <div class="theme-selector" id="themeSelector"></div>
-          </div>
-          <div class="section">
             <div class="section-title">导入 / 导出</div>
             <div class="btn-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
               <button class="btn btn-primary" onclick="exportExcel()">导出 Excel</button>
@@ -2063,18 +2061,6 @@ function applyTheme(name){
   document.querySelectorAll(".theme-option").forEach(el=>el.classList.toggle("active",el.dataset.theme===name));
   saveData();
 }
-function renderThemeSelector(){
-  const c=document.getElementById("themeSelector");if(!c)return;c.innerHTML="";
-  Object.keys(DEFAULT_THEMES).forEach(name=>{
-    const cl=DEFAULT_THEMES[name];const w=document.createElement("div");
-    w.style.cssText="display:flex;flex-direction:column;align-items:center;";
-    const b=document.createElement("div");b.className="theme-option"+(name===currentTheme?" active":"");
-    b.dataset.theme=name;b.style.background="linear-gradient(135deg,"+cl.header+","+cl.accent+")";
-    b.onclick=()=>applyTheme(name);b.innerHTML='<span class="check">&#10003;</span>';
-    w.appendChild(b);const l=document.createElement("div");l.className="theme-name";
-    l.textContent=name;w.appendChild(l);c.appendChild(w);
-  });
-}
 
 // ============================================================
 // 4. Tabs
@@ -2143,7 +2129,6 @@ function switchDM(dm){
   currentDM=dm;
   document.querySelectorAll(".dm-subtab").forEach(b=>b.classList.toggle("active",b.dataset.dm===dm));
   document.querySelectorAll(".dm-panel").forEach(p=>p.classList.toggle("active",p.id==="dm"+dm.charAt(0).toUpperCase()+dm.slice(1)));
-  if(dm==="theme")renderThemeSelector();
 }
 function switchClassTab(tab){
   currentClassTab=tab;
@@ -4448,7 +4433,7 @@ function restoreData(e){
 }
 function refreshAll(){
   applyTheme(currentTheme);renderClassSchedule();renderClassGroupSchedule();renderSchedule();
-  renderAfterSchool();renderThemeSelector();updateMainStatus();
+  renderAfterSchool();updateMainStatus();
   try{renderSubstitutions();renderSwaps();updateDotIndicators();}catch(e){}
   if(appData.platformTitle)document.getElementById("titleText").textContent=appData.platformTitle;
 }
@@ -4606,7 +4591,6 @@ function init(){
   try{renderSwaps();}catch(e){console.error("renderSwaps",e);}
   try{updateDotIndicators();}catch(e){}
   try{var dbtn=document.getElementById("exportDownloadBtn");if(dbtn)dbtn.onclick=triggerDownload;}catch(e){}
-  try{renderThemeSelector();}catch(e){}
   try{updateClock();}catch(e){}
   try{updateMainStatus();}catch(e){console.error("updateMainStatus",e);}
   try{updateWeekAndCountdown();}catch(e){}
