@@ -674,6 +674,13 @@ body {
 }
 .class-subpanel { display:none; }
 .class-subpanel.active { display:block; }
+/* 班级课表卡片容器 —— 白色圆角容器，参考主页卡片样式 */
+.class-group-card {
+  background:#FFFFFF;
+  border-radius:16px;
+  padding:clamp(12px,1.5vw,20px);
+  box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
+}
 
 /* 主题选择器 */
 .theme-selector { display:flex; gap:clamp(8px,1.2vw,14px); flex-wrap:wrap; margin-top:8px; }
@@ -1556,12 +1563,14 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
       </div>
       <!-- 班级课表 -->
       <div class="class-subpanel" id="classGroup">
-        <div class="class-schedule-title" id="classGroupScheduleTitle"></div>
-        <div class="weekly-grid-wrap">
-          <table class="weekly-grid" id="classGroupGrid">
-            <thead id="classGroupGridHeader"></thead>
-            <tbody id="classGroupGridBody"></tbody>
-          </table>
+        <div class="class-group-card">
+          <div class="class-schedule-title" id="classGroupScheduleTitle"></div>
+          <div class="weekly-grid-wrap">
+            <table class="weekly-grid" id="classGroupGrid">
+              <thead id="classGroupGridHeader"></thead>
+              <tbody id="classGroupGridBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
