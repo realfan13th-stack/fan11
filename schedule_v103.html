@@ -2101,7 +2101,19 @@ function initExportTitles(){
   el=document.getElementById("exportTitleTextAfterSchool");if(el)el.textContent=appData.exportTitles.afterSchool||EXPORT_TITLE_DEFAULTS.afterSchool;
   el=document.getElementById("exportTitleTextClassGroupSchedule");if(el)el.textContent=appData.exportTitles.classGroupSchedule||EXPORT_TITLE_DEFAULTS.classGroupSchedule;
 }
-function saveData(){appData._theme=currentTheme;appData.scheduleType=currentScheduleType;var json=JSON.stringify(appData);dbSet("scheduleAppData_2",json);try{localStorage.setItem("scheduleAppData_2",json);}catch(e){}}
+function saveData(){
+  appData._theme=currentTheme;
+  appData.scheduleType=currentScheduleType;
+  var json=JSON.stringify(appData);
+  console.log("saveData: saving appData, substitutions count:", (appData.substitutions||[]).length);
+  dbSet("scheduleAppData_2",json);
+  try{
+    localStorage.setItem("scheduleAppData_2",json);
+    console.log("saveData: data saved to localStorage successfully");
+  }catch(e){
+    console.error("saveData: failed to save to localStorage", e);
+  }
+}
 // ============================================================
 // 3. Themes
 // ============================================================
@@ -2999,17 +3011,32 @@ function openSubModal(idx){
     };
   }
   box.querySelector("#subSaveBtn").onclick=function(){
-    var dateVal=box.querySelector("#subDate").value;
-    var periodVal=box.querySelector("#subPeriod").value;
-    var courseVal=normalizeCell(box.querySelector("#subCourse").value);
-    var noteVal=(box.querySelector("#subNote").value||"").trim();
-    if(!dateVal||!periodVal){showImportStatus("请填写日期和节次","error");return;}
-    var obj={date:dateVal,periodItemId:periodVal,substituteClass:courseVal,note:noteVal};
-    if(isEdit){appData.substitutions[idx]=obj;}
-    else{appData.substitutions.push(obj);}
-    saveData();renderSubstitutions();renderClassSchedule();renderClassGroupWeekView();
-    if(currentClassTab==="weekly")renderWeekView();
-    overlay.remove();
+    try {
+      var dateVal=box.querySelector("#subDate").value;
+      var periodVal=box.querySelector("#subPeriod").value;
+      var courseVal=normalizeCell(box.querySelector("#subCourse").value);
+      var noteVal=(box.querySelector("#subNote").value||"").trim();
+      if(!dateVal||!periodVal){showImportStatus("请填写日期和节次","error");return;}
+      var obj={date:dateVal,periodItemId:periodVal,substituteClass:courseVal,note:noteVal};
+      if(isEdit){appData.substitutions[idx]=obj;}
+      else{appData.substitutions.push(obj);}
+      console.log("保存代课记录:", obj);
+      console.log("appData.substitutions:", appData.substitutions);
+      saveData();
+      renderSubstitutions();
+      renderClassSchedule();
+      renderClassGroupWeekView();
+      if(currentClassTab==="weekly")renderWeekView();
+      // 使用 setTimeout 确保渲染完成后再关闭弹窗
+      setTimeout(function(){
+        var overlayToRemove=document.querySelector(".ss-modal-overlay");
+        if(overlayToRemove)overlayToRemove.remove();
+      }, 100);
+      showImportStatus("代课记录已保存","success");
+    } catch(e) {
+      console.error("保存代课时出错:", e);
+      showImportStatus("保存失败: "+e.message, "error");
+    }
   };
   setTimeout(function(){
     var inp=box.querySelector("input[type=date]");
@@ -3084,21 +3111,36 @@ function openSwapModal(idx){
     };
   }
   box.querySelector("#swpSaveBtn").onclick=function(){
-    var dateVal=box.querySelector("#swpDate").value;
-    var myPeriod=box.querySelector("#swpMyPeriod").value;
-    var myOrig=normalizeCell(box.querySelector("#swpMyOriginal").value);
-    var theirDateVal=box.querySelector("#swpTheirDate").value;
-    var theirPeriod=box.querySelector("#swpTheirPeriod").value;
-    var theirOrig=normalizeCell(box.querySelector("#swpTheirOriginal").value);
-    var noteVal=(box.querySelector("#swpNote").value||"").trim();
-    if(!dateVal||!myPeriod||!theirPeriod){showImportStatus("请填写日期和双方节次","error");return;}
-    if(dateVal===theirDateVal&&myPeriod===theirPeriod){showImportStatus("双方日期节次不能完全相同","error");return;}
-    var obj={date:dateVal,myPeriodItemId:myPeriod,myOriginal:myOrig,theirDate:theirDateVal,theirPeriodItemId:theirPeriod,theirOriginal:theirOrig,note:noteVal};
-    if(isEdit){appData.swaps[idx]=obj;}
-    else{appData.swaps.push(obj);}
-    saveData();renderSwaps();renderClassSchedule();renderClassGroupWeekView();
-    if(currentClassTab==="weekly")renderWeekView();
-    overlay.remove();
+    try {
+      var dateVal=box.querySelector("#swpDate").value;
+      var myPeriod=box.querySelector("#swpMyPeriod").value;
+      var myOrig=normalizeCell(box.querySelector("#swpMyOriginal").value);
+      var theirDateVal=box.querySelector("#swpTheirDate").value;
+      var theirPeriod=box.querySelector("#swpTheirPeriod").value;
+      var theirOrig=normalizeCell(box.querySelector("#swpTheirOriginal").value);
+      var noteVal=(box.querySelector("#swpNote").value||"").trim();
+      if(!dateVal||!myPeriod||!theirPeriod){showImportStatus("请填写日期和双方节次","error");return;}
+      if(dateVal===theirDateVal&&myPeriod===theirPeriod){showImportStatus("双方日期节次不能完全相同","error");return;}
+      var obj={date:dateVal,myPeriodItemId:myPeriod,myOriginal:myOrig,theirDate:theirDateVal,theirPeriodItemId:theirPeriod,theirOriginal:theirOrig,note:noteVal};
+      if(isEdit){appData.swaps[idx]=obj;}
+      else{appData.swaps.push(obj);}
+      console.log("保存换课记录:", obj);
+      console.log("appData.swaps:", appData.swaps);
+      saveData();
+      renderSwaps();
+      renderClassSchedule();
+      renderClassGroupWeekView();
+      if(currentClassTab==="weekly")renderWeekView();
+      // 使用 setTimeout 确保渲染完成后再关闭弹窗
+      setTimeout(function(){
+        var overlayToRemove=document.querySelector(".ss-modal-overlay");
+        if(overlayToRemove)overlayToRemove.remove();
+      }, 100);
+      showImportStatus("换课记录已保存","success");
+    } catch(e) {
+      console.error("保存换课时出错:", e);
+      showImportStatus("保存失败: "+e.message, "error");
+    }
   };
   setTimeout(function(){
     var inp=box.querySelector("input[type=date]");
