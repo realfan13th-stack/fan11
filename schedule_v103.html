@@ -1510,32 +1510,11 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
     <!-- 课表 -->
     <div class="tab-content" id="tabClass">
       <div class="class-subtabs" id="classSubtabs">
-        <button class="class-subtab active" data-csub="personal" onclick="switchClassTab('personal')">个人课表</button>
+        <button class="class-subtab active" data-csub="weekly" onclick="switchClassTab('weekly')">周视图</button>
         <button class="class-subtab" data-csub="group" onclick="switchClassTab('group')">班级课表</button>
-        <button class="class-subtab" data-csub="weekly" onclick="switchClassTab('weekly')">周视图</button>
-      </div>
-      <!-- 个人课表 -->
-      <div class="class-subpanel active" id="classPersonal">
-        <div class="class-schedule-title" id="classScheduleTitle"></div>
-        <div class="class-grid-wrapper">
-          <table class="class-grid" id="classGrid">
-            <thead id="classGridHeader"></thead>
-            <tbody id="classGridBody"></tbody>
-          </table>
-        </div>
-      </div>
-      <!-- 班级课表 -->
-      <div class="class-subpanel" id="classGroup">
-        <div class="class-schedule-title" id="classGroupScheduleTitle"></div>
-        <div class="class-grid-wrapper">
-          <table class="class-grid" id="classGroupGrid">
-            <thead id="classGroupGridHeader"></thead>
-            <tbody id="classGroupGridBody"></tbody>
-          </table>
-        </div>
       </div>
       <!-- 周视图 -->
-      <div class="class-subpanel" id="classWeekly">
+      <div class="class-subpanel active" id="classWeekly">
         <div class="weekly-header" id="weeklyHeader"></div>
         <div class="weekly-grid-wrap">
           <table class="weekly-grid" id="weeklyGrid">
@@ -1548,6 +1527,16 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
           <button onclick="navigateWeek(-1)">&larr; 上一周</button>
           <button id="weekNavCurrent" class="active" disabled>● 本周</button>
           <button onclick="navigateWeek(1)">下一周 &rarr;</button>
+        </div>
+      </div>
+      <!-- 班级课表 -->
+      <div class="class-subpanel" id="classGroup">
+        <div class="class-schedule-title" id="classGroupScheduleTitle"></div>
+        <div class="weekly-grid-wrap">
+          <table class="weekly-grid" id="classGroupGrid">
+            <thead id="classGroupGridHeader"></thead>
+            <tbody id="classGroupGridBody"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -2115,7 +2104,7 @@ function switchTab(tab){
   }
   if(tab==="class"){
     if(currentClassTab==="weekly"){weeklyWeekOffset=0;renderWeekView();}
-    else renderClassSchedule();
+    else if(currentClassTab==="group"){if(typeof renderClassGroupWeekView==="function")renderClassGroupWeekView();}
     try{renderSubstitutions();renderSwaps();updateDotIndicators();}catch(e){}
   }
   if(tab==="afterschool")renderAfterSchool();
@@ -2129,12 +2118,11 @@ function switchDM(dm){
 function switchClassTab(tab){
   currentClassTab=tab;
   document.querySelectorAll(".class-subtab").forEach(b=>b.classList.toggle("active",b.dataset.csub===tab));
-  document.querySelectorAll(".class-subpanel").forEach(p=>{var match=p.id==="class"+(tab==="personal"?"Personal":tab==="group"?"Group":"Weekly");p.classList.toggle("active",match);});
+  document.querySelectorAll(".class-subpanel").forEach(p=>{var match=p.id==="class"+(tab==="group"?"Group":"Weekly");p.classList.toggle("active",match);});
   if(tab==="weekly"){weeklyWeekOffset=0;renderWeekView();}
-  else if(tab==="group"){weeklyWeekOffset=0;if(typeof renderClassGroupSchedule==="function")renderClassGroupSchedule();}
-  else {weeklyWeekOffset=0;if(typeof renderClassSchedule==="function")renderClassSchedule();}
+  else if(tab==="group"){if(typeof renderClassGroupWeekView==="function")renderClassGroupWeekView();}
 }
-var currentClassTab="personal";
+var currentClassTab="weekly";
 function setScheduleType(type){
   currentScheduleType=type;editScheduleMode=type;
   renderClassSchedule();renderSchedule();updateMainStatus();saveData();
@@ -2357,51 +2345,57 @@ function renderClassSchedule(){
     });
   },50);
 }
-function renderClassGroupSchedule(){
-  const cs=appData.classGroupSchedule,days=cs.days;
-  const sections=getClassSectionItems();
-  const header=document.getElementById("classGroupGridHeader");
-  const body=document.getElementById("classGroupGridBody");
-  const titleEl=document.getElementById("classGroupScheduleTitle");
+function renderClassGroupWeekView(){
+  var cs=appData.classGroupSchedule;
+  if(!cs)return;
+  var days=cs.days;
+  if(!days)return;
+  var sections=getClassSectionItems();
+  var cnDays=['一','二','三','四','五'];
+  var titleEl=document.getElementById("classGroupScheduleTitle");
   if(titleEl)titleEl.textContent=appData.exportTitles&&appData.exportTitles.classGroupSchedule?appData.exportTitles.classGroupSchedule:"一（2）班课程表";
-  var hasItems=sections.some(function(s){return s.items.length>0;});
-  if(!hasItems){
-    header.innerHTML='<tr><th></th>'+days.map(function(d){return"<th>"+d+"</th>";}).join("")+"</tr>";
-    body.innerHTML='<tr><td colspan="'+(days.length+1)+'" style="text-align:center;padding:20px;opacity:0.5;">暂无课程安排，请在作息表中添加上课行</td></tr>';
-    return;
+  /* 表头：只显示周一至周五 */
+  var theadHtml='<tr>';
+  theadHtml+='<th class="wk-week-num-th"></th>';
+  for(var di=0;di<days.length;di++){
+    theadHtml+='<th class="wk-date-th">';
+    theadHtml+='<span class="wdt-day">周'+cnDays[di]+'</span>';
+    theadHtml+='</th>';
   }
-  let hHtml="<tr><th></th>";
-  days.forEach(function(d){hHtml+="<th>"+d+"</th>";});
-  hHtml+="</tr>";
-  header.innerHTML=hHtml;
-  let bHtml="";
+  theadHtml+='</tr>';
+  document.getElementById("classGroupGridHeader").innerHTML=theadHtml;
+  /* 表格主体：卡片化渲染 */
+  var bodyHtml="";
   var globalIdx=0;
   sections.forEach(function(sec,si){
-    bHtml+='<tr class="section-divider"><td colspan="'+(days.length+1)+'">'+sec.sectionName+"</td></tr>";
-    sec.items.forEach(function(it){
-      const label=String(globalIdx+1);
-      bHtml+='<tr><td class="period-label">'+label+'</td>';
-      days.forEach(function(d){
-        const val=(cs.grid[d]&&cs.grid[d][it.id])||"";
-        if(val.trim()){
-          const parsed=parseCourseCell(val);
-          bHtml+='<td><span class="course-name">'+parsed.main+'</span>';
-          if(parsed.sub)bHtml+='<span class="course-class">\uff08'+parsed.sub+'\uff09</span>';
-          bHtml+="</td>";
-        }else{bHtml+='<td class="empty"></td>';}
+    var secTotalItems=sec.items.length;
+    sec.items.forEach(function(it,itemIdx){
+      var label=String(globalIdx+1);
+      var trClass='';
+      if(itemIdx===0)trClass=' wk-section-first';
+      if(itemIdx===secTotalItems-1)trClass+=' wk-section-last';
+      bodyHtml+='<tr class="'+trClass.trim()+'"><td class="period-label"><span class="period-label-num">'+label+'</span></td>';
+      days.forEach(function(dayName){
+        var cell=cs.grid[dayName]?cs.grid[dayName][it.id]:null;
+        var displayCourse=cell||"";
+        var parsed=parseCourseCell(displayCourse);
+        if(parsed.main){
+          var bgColor=getSubjectColor(parsed.main);
+          bodyHtml+='<td data-day="'+dayName+'" data-itemid="'+it.id+'">';
+          bodyHtml+='<div class="week-card" style="background:'+bgColor+';">';
+          bodyHtml+='<span class="wc-name">'+escapeHTML(parsed.main)+'</span>';
+          if(parsed.sub)bodyHtml+='<span class="wc-class">'+escapeHTML(parsed.sub)+'</span>';
+          bodyHtml+='</div>';
+          bodyHtml+='</td>';
+        }else{
+          bodyHtml+='<td><div class="wk-empty-cell"></div></td>';
+        }
       });
-      bHtml+="</tr>";
+      bodyHtml+='</tr>';
       globalIdx++;
     });
   });
-  body.innerHTML=bHtml;
-  setTimeout(function(){
-    var wrappers=document.querySelectorAll('#classGroup .class-grid-wrapper');
-    wrappers.forEach(function(w){
-      if(w.scrollWidth>w.clientWidth+2)w.classList.add('scrollable');
-      else w.classList.remove('scrollable');
-    });
-  },50);
+  document.getElementById("classGroupGridBody").innerHTML=bodyHtml;
 }
 // ============================================================
 // 8.5 代课/换课 辅助函数
@@ -2604,7 +2598,7 @@ function renderWeekView(){
       navBtn.textContent='回本周';
       navBtn.classList.remove('active');
       navBtn.disabled=false;
-      navBtn.onclick=function(){weeklyWeekOffset=0;renderWeekView();renderClassSchedule();renderClassGroupSchedule();updateDotIndicators();};
+      navBtn.onclick=function(){weeklyWeekOffset=0;renderWeekView();renderClassSchedule();renderClassGroupWeekView();updateDotIndicators();};
     }
   }
 
@@ -2753,14 +2747,14 @@ function goToWeekDate(){
   weeklyWeekOffset=Math.round(diffDays/7);
   renderWeekView();
   renderClassSchedule();
-  renderClassGroupSchedule();
+  renderClassGroupWeekView();
   updateDotIndicators();
 }
 function navigateWeek(delta){
   weeklyWeekOffset+=delta;
   renderWeekView();
   renderClassSchedule();
-  renderClassGroupSchedule();
+  renderClassGroupWeekView();
   updateDotIndicators();
 }
 function updateDotIndicators(){
@@ -2919,7 +2913,7 @@ function openSubModal(idx){
     box.querySelector("#subDeleteBtn").onclick=function(){
       showConfirm("确定删除这条代课记录？",function(){
         appData.substitutions.splice(idx,1);
-        saveData();renderSubstitutions();renderClassSchedule();renderClassGroupSchedule();
+        saveData();renderSubstitutions();renderClassSchedule();renderClassGroupWeekView();
         if(currentClassTab==="weekly")renderWeekView();
         overlay.remove();
       });
@@ -2934,7 +2928,7 @@ function openSubModal(idx){
     var obj={date:dateVal,periodItemId:periodVal,substituteClass:courseVal,note:noteVal};
     if(isEdit){appData.substitutions[idx]=obj;}
     else{appData.substitutions.push(obj);}
-    saveData();renderSubstitutions();renderClassSchedule();renderClassGroupSchedule();
+    saveData();renderSubstitutions();renderClassSchedule();renderClassGroupWeekView();
     if(currentClassTab==="weekly")renderWeekView();
     overlay.remove();
   };
@@ -2946,7 +2940,7 @@ function openSubModal(idx){
 function deleteSub(idx){
   showConfirm("确定删除这条代课记录？",function(){
     appData.substitutions.splice(idx,1);
-    saveData();renderSubstitutions();renderClassSchedule();renderClassGroupSchedule();
+    saveData();renderSubstitutions();renderClassSchedule();renderClassGroupWeekView();
     if(currentClassTab==="weekly")renderWeekView();
   });
 }
@@ -3004,7 +2998,7 @@ function openSwapModal(idx){
     box.querySelector("#swpDeleteBtn").onclick=function(){
       showConfirm("确定删除这条换课记录？",function(){
         appData.swaps.splice(idx,1);
-        saveData();renderSwaps();renderClassSchedule();renderClassGroupSchedule();
+        saveData();renderSwaps();renderClassSchedule();renderClassGroupWeekView();
         if(currentClassTab==="weekly")renderWeekView();
         overlay.remove();
       });
@@ -3023,7 +3017,7 @@ function openSwapModal(idx){
     var obj={date:dateVal,myPeriodItemId:myPeriod,myOriginal:myOrig,theirDate:theirDateVal,theirPeriodItemId:theirPeriod,theirOriginal:theirOrig,note:noteVal};
     if(isEdit){appData.swaps[idx]=obj;}
     else{appData.swaps.push(obj);}
-    saveData();renderSwaps();renderClassSchedule();renderClassGroupSchedule();
+    saveData();renderSwaps();renderClassSchedule();renderClassGroupWeekView();
     if(currentClassTab==="weekly")renderWeekView();
     overlay.remove();
   };
@@ -3035,7 +3029,7 @@ function openSwapModal(idx){
 function deleteSwap(idx){
   showConfirm("确定删除这条换课记录？",function(){
     appData.swaps.splice(idx,1);
-    saveData();renderSwaps();renderClassSchedule();renderClassGroupSchedule();
+    saveData();renderSwaps();renderClassSchedule();renderClassGroupWeekView();
     if(currentClassTab==="weekly")renderWeekView();
   });
 }
@@ -3133,7 +3127,7 @@ function saveClassGroupEdit(){
     if(!appData.classGroupSchedule.grid[day])appData.classGroupSchedule.grid[day]={};
     appData.classGroupSchedule.grid[day][itemId]=val||null;
   });
-  saveData();renderClassGroupSchedule();
+  saveData();renderClassGroupWeekView();
   showImportStatus("\u2705 \u73ed\u7ea7\u8bfe\u8868\u5df2\u4fdd\u5b58","success");
 }
 
@@ -4427,7 +4421,7 @@ function restoreData(e){
   e.target.value="";
 }
 function refreshAll(){
-  applyTheme(currentTheme);renderClassSchedule();renderClassGroupSchedule();renderSchedule();
+  applyTheme(currentTheme);renderClassSchedule();renderClassGroupWeekView();renderSchedule();
   renderAfterSchool();updateMainStatus();
   try{renderSubstitutions();renderSwaps();updateDotIndicators();}catch(e){}
   if(appData.platformTitle)document.getElementById("titleText").textContent=appData.platformTitle;
