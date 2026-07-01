@@ -318,7 +318,7 @@ body {
   letter-spacing:0.04em;
 }
 .class-grid {
-  width:100%; border-collapse:collapse; min-width:0; table-layout:fixed;
+  width:100%; border-collapse:separate; border-spacing:0 4px; min-width:0; table-layout:fixed;
 }
 .class-grid th {
   background:#597AB5; color:#fff;
@@ -331,9 +331,10 @@ body {
 .class-grid tr:last-child td:last-child { border-radius:0 0 var(--radius) 0; }
 .class-grid td {
   border:1px solid #E8ECF0;
-  padding:clamp(3px,0.5vw,10px) clamp(2px,0.4vw,8px);
+  padding:clamp(6px,0.8vw,12px) clamp(4px,0.6vw,10px);
   text-align:center; vertical-align:middle;
   min-height:clamp(48px,5vw,64px); height:clamp(48px,5vw,64px); transition:0.2s;
+  background:#FFFFFF;
 }
 .class-grid tbody tr:hover td:not(.section-divider td):not(.period-label) { background:rgba(89,122,181,0.04); }
 .class-grid .period-label {
@@ -687,6 +688,21 @@ body {
   border-radius:16px;
   padding:clamp(12px,1.5vw,20px);
   box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
+}
+/* 晚托区卡片容器 —— 白色圆角容器 */
+.as-card {
+  background:#FFFFFF;
+  border-radius:16px;
+  padding:clamp(12px,1.5vw,20px);
+  box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
+}
+/* 数据管理区卡片容器 —— 白色圆角容器 */
+.data-mgmt-card {
+  background:#FFFFFF;
+  border-radius:16px;
+  padding:clamp(12px,1.5vw,20px);
+  box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02);
+  max-width:800px;
 }
 
 /* 主题选择器 */
@@ -1586,28 +1602,31 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
     <!-- 晚托 -->
     <div class="tab-content" id="tabAfterschool">
-      <div class="afterschool-header">
-        <div class="as-subtabs" id="asSubtabs">
-          <button class="as-subtab active" data-as="calendar" onclick="switchAfterschoolTab('calendar')">托管表</button>
+      <div class="as-card">
+        <div class="afterschool-header">
+          <div class="as-subtabs" id="asSubtabs">
+            <button class="as-subtab active" data-as="calendar" onclick="switchAfterschoolTab('calendar')">托管表</button>
+          </div>
+          <div id="semesterBar" style="margin-bottom:8px;font-size:clamp(12px,1.2vw,14px);"></div>
         </div>
-        <div id="semesterBar" style="margin-bottom:8px;font-size:clamp(12px,1.2vw,14px);"></div>
+        <div class="month-tabs-container">
+          <div class="month-tabs" id="monthTabs"></div>
+        </div>
+        <div class="as-legend" id="asLegend"></div>
+        <div class="as-calendar" id="asCalendar"></div>
       </div>
-      <div class="month-tabs-container">
-        <div class="month-tabs" id="monthTabs"></div>
-      </div>
-      <div class="as-legend" id="asLegend"></div>
-      <div class="as-calendar" id="asCalendar"></div>
     </div>
 
     <!-- 数据管理 -->
     <div class="tab-content" id="tabData">
-      <div class="data-mgmt">
-        <div class="dm-subtabs" id="dmSubtabs">
-          <button class="dm-subtab active" data-dm="schedule" onclick="switchDM('schedule')">作息表</button>
-          <button class="dm-subtab" data-dm="class" onclick="switchDM('class')">课程表</button>
-          <button class="dm-subtab" data-dm="afterschool" onclick="switchDM('afterschool')">晚托</button>
-          <button class="dm-subtab" data-dm="theme" onclick="switchDM('theme')">导出</button>
-        </div>
+      <div class="data-mgmt-card">
+        <div class="data-mgmt">
+          <div class="dm-subtabs" id="dmSubtabs">
+            <button class="dm-subtab active" data-dm="schedule" onclick="switchDM('schedule')">作息表</button>
+            <button class="dm-subtab" data-dm="class" onclick="switchDM('class')">课程表</button>
+            <button class="dm-subtab" data-dm="afterschool" onclick="switchDM('afterschool')">晚托</button>
+            <button class="dm-subtab" data-dm="theme" onclick="switchDM('theme')">导出</button>
+          </div>
         <!-- 作息表编辑 -->
         <div class="dm-panel active" id="dmSchedule">
           <div class="section">
@@ -1750,6 +1769,7 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
         </div>
 
         <!-- 公共导入导出（移到"导出"tab内） -->
+      </div>
       </div>
     </div>
 
