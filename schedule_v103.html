@@ -166,6 +166,26 @@ body {
   gap:clamp(8px,1vw,14px);
   box-shadow:2px 0 8px var(--shadow);
 }
+
+/* 工作台导航条 —— 胶囊按钮风格，主页背景色 */
+.workspace-nav {
+  display:flex; gap:6px;
+  grid-column:1 / -1; /* 横跨两列 */
+  margin-bottom:clamp(8px,1vw,12px);
+}
+.ws-nav-btn {
+  flex:1;
+  padding:clamp(8px,1vw,12px) clamp(10px,1.3vw,18px);
+  border:none; background:transparent;
+  border-radius:999px;
+  cursor:pointer; font-size:clamp(12px,1.2vw,14px); font-weight:500;
+  color:#91918F; white-space:nowrap;
+  text-align:center;
+  -webkit-tap-highlight-color:transparent; font-family:inherit;
+}
+.ws-nav-btn.active {
+  background:#504E4F; color:#FFFFFF;
+}
 .overview-card {
   background:var(--card); border-radius:var(--radius); padding:clamp(10px,1.2vw,16px);
   border:1px solid var(--border); box-shadow:0 1px 4px var(--shadow);
@@ -475,7 +495,7 @@ body {
 .data-mgmt { max-width:800px; }
 .data-mgmt .section {
   background:transparent; border:1px solid var(--border); border-radius:var(--radius);
-  padding:clamp(12px,1.8vw,20px); margin-bottom:clamp(8px,1vw,12px);
+  padding:clamp(10px,1.5vw,16px); margin-bottom:clamp(6px,0.8vw,10px);
   box-shadow:none; /* 去除阴影，与主页一致 */
 }
 .data-mgmt .section-title {
@@ -581,12 +601,12 @@ body {
   border:none; background:transparent;
   border-radius:999px;
   cursor:pointer; font-size:clamp(14px,1.4vw,16px); font-weight:500;
-  color:#000000; white-space:nowrap;
+  color:#91918F; white-space:nowrap;
   text-align:center;
   -webkit-tap-highlight-color:transparent; font-family:inherit;
 }
 .dm-subtab.active {
-  background:#000000; color:#FFFFFF;
+  background:#504E4F; color:#FFFFFF;
 }
 .dm-panel { display:none; }
 .dm-panel.active { display:block; }
@@ -617,12 +637,12 @@ body {
   border:none; background:transparent;
   border-radius:999px;
   cursor:pointer; font-size:clamp(14px,1.4vw,16px); font-weight:500;
-  color:#000000; white-space:nowrap;
+  color:#91918F; white-space:nowrap;
   text-align:center;
   -webkit-tap-highlight-color:transparent; font-family:inherit;
 }
 .class-subtab.active {
-  background:#000000; color:#FFFFFF;
+  background:#504E4F; color:#FFFFFF;
 }
 .class-subpanel { display:none; }
 .class-subpanel.active { display:block; }
@@ -733,6 +753,9 @@ body {
     grid-row:3;
     margin-top:6px;
   }
+  /* 移动端工作台导航 */
+  .workspace-nav { gap:4px; margin-bottom:8px; }
+  .ws-nav-btn { padding:8px 10px; font-size:12px; }
   .right-panel {
     padding: 10px 12px;
     position: relative;
@@ -754,9 +777,9 @@ body {
   .cd-unit { font-size:10px; }
   .class-grid-wrapper {
     background: transparent; /* 露出主页底色 --bg #F9FCF6 */
-    border-radius: 16px;
-    padding: 14px 12px;
-    margin-bottom: 12px;
+    border-radius: 12px;
+    padding: 8px 6px;
+    margin-bottom: 8px;
     box-shadow: none; /* 去除阴影，与主页一致 */
   }
   .class-grid-wrapper h3 {
@@ -1069,10 +1092,10 @@ body {
   animation:pulse 2.5s ease-in-out infinite;
 }
 
-/* 空格子占位：保持与 week-card 等高，浅色背景 */
+/* 空格子占位：保持与 week-card 等高，白色背景 */
 .wk-empty-cell {
   display:inline-block; width:100%; min-height:clamp(38px,4.2vw,52px); height:100%;
-  background:#F5F7FA; border-radius:10px;
+  background:#FFFFFF; border-radius:10px;
 }
 
 /* ========== 合并表头样式（第N周 + 周X+日期）========== */
@@ -1144,13 +1167,13 @@ tr.wk-section-first td { padding-top:clamp(6px,0.8vw,10px); }
 /* section末行下方加一点padding（border-bottom已负责段间间隙） */
 tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
-/* ✦ 卡片核心样式 */
+/* ✦ 卡片核心样式 —— 固定高度确保代换课色块一致性 */
 .week-card {
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   border-radius:10px;
   padding:clamp(3px,0.4vw,6px) clamp(2px,0.3vw,5px);
   box-shadow:0 1px 2px rgba(0,0,0,0.04);
-  min-height:clamp(38px,4.2vw,52px); height:100%; width:100%;
+  height:clamp(38px,4.2vw,52px); width:100%;
   transition:0.15s; position:relative;
   box-sizing:border-box; overflow:hidden;
 }
@@ -1244,10 +1267,10 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
   /* 表格单元格移动端 */
   .weekly-grid td { min-height:36px; padding:2px 1px; border-radius:6px; }
-  .week-card { border-radius:7px; padding:3px 2px; min-height:28px; height:100%; width:100%; }
+  .week-card { border-radius:7px; padding:3px 2px; height:28px; width:100%; }
   .week-card .wc-name { font-size:11px; }
   .week-card .wc-class { font-size:9px; }
-  .wk-empty-cell { min-height:28px; }
+  .wk-empty-cell { min-height:28px; background:#FFFFFF; }
 
   /* 节次标签移动端 - 无背景 */
   .period-label-num { padding:2px 4px; font-size:11px; min-width:20px; border-radius:0; background:transparent; }
@@ -1274,10 +1297,10 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
   /* 表格单元格桌面端 */
   .weekly-grid td { min-height:46px; padding:4px 3px; border-radius:8px; }
-  .week-card { border-radius:10px; padding:5px 4px; min-height:40px; height:40px; }
+  .week-card { border-radius:10px; padding:5px 4px; height:40px; }
   .week-card .wc-name { font-size:14px; }
   .week-card .wc-class { font-size:11px; }
-  .wk-empty-cell { min-height:40px; background:#F5F7FA; border-radius:10px; }
+  .wk-empty-cell { min-height:40px; background:#FFFFFF; border-radius:10px; }
 
   /* 节次标签桌面端 - 无背景 */
   .period-label-num { padding:3px 7px; font-size:14px; min-width:28px; border-radius:0; background:transparent; }
@@ -1406,6 +1429,13 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
   <!-- 左侧 -->
   <aside class="left-panel" id="leftPanel">
+    <!-- 工作台导航条 -->
+    <div class="workspace-nav" id="workspaceNav">
+      <button class="ws-nav-btn active" data-wstab="home" onclick="switchTab('home')">工作台</button>
+      <button class="ws-nav-btn" data-wstab="class" onclick="switchTab('class')">课表</button>
+      <button class="ws-nav-btn" data-wstab="afterschool" onclick="switchTab('afterschool')">晚托</button>
+      <button class="ws-nav-btn" data-wstab="data" onclick="switchTab('data')">数据</button>
+    </div>
     <!-- Bento 时钟卡 (2×1) -->
     <div class="overview-card clock-card">
       <div class="clock-display">
@@ -2059,18 +2089,15 @@ function switchTab(tab){
   currentTab=tab;
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
   document.querySelectorAll(".tab-content").forEach(c=>c.classList.toggle("active",c.id==="tab"+tab.charAt(0).toUpperCase()+tab.slice(1)));
+  /* 同步工作台导航条高亮 */
+  document.querySelectorAll(".ws-nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.wstab===tab));
   var leftPanel=document.getElementById("leftPanel");
   var rightPanel=document.querySelector(".right-panel");
-  var isMobile=window.matchMedia('(max-width: 768px)').matches;
-  if(isMobile){
-    if(tab==="home"){
-      if(leftPanel)leftPanel.style.display="";
-      if(rightPanel)rightPanel.style.display="none";
-      try{updateMainStatus();}catch(e){}
-    }else{
-      if(leftPanel)leftPanel.style.display="none";
-      if(rightPanel)rightPanel.style.display="";
-    }
+  /* 所有屏幕尺寸：home标签只显示工作台区域 */
+  if(tab==="home"){
+    if(leftPanel)leftPanel.style.display="";
+    if(rightPanel)rightPanel.style.display="none";
+    try{updateMainStatus();}catch(e){}
   }else{
     if(leftPanel)leftPanel.style.display="";
     if(rightPanel)rightPanel.style.display="";
