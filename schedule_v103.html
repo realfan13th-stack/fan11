@@ -1150,7 +1150,7 @@ body {
 
 /* 空格子占位：保持与 week-card 等高，透明背景，relative 用于徽标定位 */
 .wk-empty-cell {
-  display:inline-block; width:100%; min-height:clamp(38px,4.2vw,52px); height:100%;
+  display:inline-block; width:100%; min-height:clamp(44px,4.8vw,58px); height:100%;
   background:transparent; border-radius:10px;
   position:relative;
 }
@@ -1226,7 +1226,7 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   border-radius:10px;
   padding:clamp(3px,0.4vw,6px) clamp(2px,0.3vw,5px);
   box-shadow:0 1px 2px rgba(0,0,0,0.04);
-  height:clamp(38px,4.2vw,52px); min-height:clamp(38px,4.2vw,52px); max-height:clamp(38px,4.2vw,52px);
+  height:clamp(44px,4.8vw,58px); min-height:clamp(44px,4.8vw,58px); max-height:clamp(44px,4.8vw,58px);
   width:100%;
   transition:0.15s; position:relative;
   box-sizing:border-box; overflow:hidden;
@@ -1323,10 +1323,10 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
   /* 表格单元格移动端 */
   .weekly-grid td { min-height:36px; padding:2px 1px; border-radius:6px; }
-  .week-card { border-radius:7px; padding:4px 2px; height:30px; min-height:30px; max-height:30px; width:100%; }
+  .week-card { border-radius:7px; padding:4px 2px; height:36px; min-height:36px; max-height:36px; width:100%; }
   .week-card .wc-name { font-size:11px; }
   .week-card .wc-class { font-size:9px; }
-  .wk-empty-cell { min-height:30px; height:30px; background:transparent; box-sizing:border-box; }
+  .wk-empty-cell { min-height:36px; height:36px; background:transparent; box-sizing:border-box; }
 
   /* 节次标签移动端 - 无背景 */
   .period-label-num { padding:2px 4px; font-size:11px; min-width:20px; border-radius:0; background:transparent; }
@@ -1353,10 +1353,10 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
 
   /* 表格单元格桌面端 */
   .weekly-grid td { min-height:46px; padding:4px 3px; border-radius:8px; }
-  .week-card { border-radius:10px; padding:6px 4px; height:42px; min-height:42px; max-height:42px; }
+  .week-card { border-radius:10px; padding:6px 4px; height:48px; min-height:48px; max-height:48px; }
   .week-card .wc-name { font-size:14px; }
   .week-card .wc-class { font-size:11px; }
-  .wk-empty-cell { min-height:42px; height:42px; background:transparent; border-radius:10px; box-sizing:border-box; }
+  .wk-empty-cell { min-height:48px; height:48px; background:transparent; border-radius:10px; box-sizing:border-box; }
 
   /* 节次标签桌面端 - 无背景 */
   .period-label-num { padding:3px 7px; font-size:14px; min-width:28px; border-radius:0; background:transparent; }
@@ -3820,6 +3820,34 @@ function updateMainStatus(){
   var remEl=document.getElementById("remainingMin");
   var nextEl=document.getElementById("nextClass");
   
+  var todayStr=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
+  
+  function resolveCourse(cell,itemId){
+    var displayCourse=cell||"";
+    var subs=appData.substitutions||[];
+    var swps=appData.swaps||[];
+    var isSwappedOut=false,isSwappedIn=false,swappedInCourse="";
+    for(var si=0;si<swps.length;si++){
+      var swp=swps[si];
+      if(swp.date===todayStr&&swp.myPeriodItemId===itemId){isSwappedOut=true;break;}
+    }
+    if(!isSwappedOut){
+      for(var si2=0;si2<swps.length;si2++){
+        var swp2=swps[si2];
+        if((swp2.theirDate||swp2.date)===todayStr&&swp2.theirPeriodItemId===itemId){
+          isSwappedIn=true;swappedInCourse=swp2.theirOriginal||"";break;
+        }
+      }
+    }
+    if(isSwappedOut)displayCourse="";
+    else if(isSwappedIn)displayCourse=swappedInCourse;
+    var isSub=false,subCourse="";
+    for(var si3=0;si3<subs.length;si3++){
+      if(subs[si3].date===todayStr&&subs[si3].periodItemId===itemId){isSub=true;subCourse=subs[si3].substituteClass||"";break;}
+    }
+    return isSub?subCourse:displayCourse;
+  }
+  
   if(today==="星期六"||today==="星期日"){
     curEl.textContent="周末休息";
     if(endLabel)endLabel.textContent="";
@@ -3862,7 +3890,8 @@ function updateMainStatus(){
         if(allItems[g+1].item.category==="class"){
           var ci=items.indexOf(allItems[g+1].item);
           var cell=ci>=0&&appData.classSchedule.grid[today]?appData.classSchedule.grid[today][allItems[g+1].item.id]:null;
-          if(cell)nN=cell;
+          var resolved=resolveCourse(cell,allItems[g+1].item.id);
+          if(resolved)nN=resolved;
         }
         nextEl.innerHTML=allItems[g+1].start+" "+nN;
         updateTodayAfterSchool();return;
@@ -3879,7 +3908,7 @@ function updateMainStatus(){
       endEl.textContent=nextItem.start;
       remEl.textContent=(nextItem.startM-nm)+" 分钟";
       var nName=nextItem.name;
-      if(nextItem.category==="class"){var ci=items.indexOf(nextItem);var cell=ci>=0&&cs.grid[today]?cs.grid[today][nextItem.id]:null;if(cell)nName=cell;}
+      if(nextItem.category==="class"){var ci=items.indexOf(nextItem);var cell=ci>=0&&cs.grid[today]?cs.grid[today][nextItem.id]:null;var resolved=resolveCourse(cell,nextItem.id);if(resolved)nName=resolved;}
       nextEl.innerHTML=nextItem.start+" "+nName;
     }else{
       curEl.textContent="今日课程已结束";
@@ -3894,7 +3923,8 @@ function updateMainStatus(){
   if(activeItem.category==="class"){
     var ci=items.indexOf(activeItem);
     var cell=ci>=0&&cs.grid[today]?cs.grid[today][activeItem.id]:null;
-    if(cell)displayName=activeItem.name+" "+cell;
+    var resolved=resolveCourse(cell,activeItem.id);
+    if(resolved)displayName=activeItem.name+" "+resolved;
   }
   if(activeItem.category==="break"){
     curEl.textContent="课间休息";
@@ -3910,7 +3940,7 @@ function updateMainStatus(){
   
   if(nextItem){
     var nName=nextItem.name;
-    if(nextItem.category==="class"){var ci=items.indexOf(nextItem);var cell=ci>=0&&cs.grid[today]?cs.grid[today][nextItem.id]:null;if(cell)nName=cell;}
+    if(nextItem.category==="class"){var ci=items.indexOf(nextItem);var cell=ci>=0&&cs.grid[today]?cs.grid[today][nextItem.id]:null;var resolved=resolveCourse(cell,nextItem.id);if(resolved)nName=resolved;}
     nextEl.innerHTML=nextItem.start+" "+nName;
   }else{
     // Find any future item
