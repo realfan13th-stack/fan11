@@ -2420,22 +2420,25 @@ function getClassSectionItems(){
 function renderClassSchedule(){
   const cs=appData.classSchedule,days=cs.days;
   const sections=getClassSectionItems();
-  // 修复：检查当前激活的面板，只渲染对应的表格
+  // 修复：根据当前激活的面板分发到正确的渲染函数
+  // 周视图由独立的 renderWeekView 负责渲染（含完整卡片化UI+代换课圆点+晚托联动）
+  // 班级课表由独立的 renderClassGroupWeekView 负责渲染
+  // 避免 renderClassSchedule 用自己的旧版表格样式覆盖周视图/班级课表的卡片化渲染
   const isWeeklyActive=document.getElementById("classWeekly") && document.getElementById("classWeekly").classList.contains("active");
   const isGroupActive=document.getElementById("classGroup") && document.getElementById("classGroup").classList.contains("active");
   
-  let header=null, body=null;
   if(isWeeklyActive){
-    header=document.getElementById("weeklyGridHeader");
-    body=document.getElementById("weeklyGridBody");
-  } else if(isGroupActive){
-    header=document.getElementById("classGroupGridHeader");
-    body=document.getElementById("classGroupGridBody");
-  } else {
-    // 如果没有激活的面板，尝试使用 weeklyGrid（默认）
-    header=document.getElementById("weeklyGridHeader");
-    body=document.getElementById("weeklyGridBody");
+    if(typeof renderWeekView==="function") renderWeekView();
+    return;
   }
+  if(isGroupActive){
+    if(typeof renderClassGroupWeekView==="function") renderClassGroupWeekView();
+    return;
+  }
+  
+  // 以下为默认渲染逻辑（用于数据管理区/导出等非可视面板场景）
+  let header=document.getElementById("weeklyGridHeader");
+  let body=document.getElementById("weeklyGridBody");
   
   const titleEl=document.getElementById("classScheduleTitle");
   if(titleEl)titleEl.textContent=appData.exportTitles&&appData.exportTitles.classSchedule?appData.exportTitles.classSchedule:"个人课程表";
