@@ -1203,10 +1203,9 @@ body {
 
 /* ========== 分段间距控制 ========== */
 
-/* 段间间隙：用透明border-bottom制造（tr不支持margin，此法有效）*/
-/* 移动端：8px；桌面端：16px —— 通过border-bottom-width实现 */
+/* 段间间隙：统一为行内间隙，避免不同section结构导致间距不一致 */
 tr.wk-section-last td {
-  border-bottom: clamp(8px,1.5vw,16px) solid transparent;
+  border-bottom: 3px solid transparent;
 }
 
 /* 用border-spacing制造行内微小间隙，间隙处露出#F9FCF6背景 */
@@ -1215,10 +1214,9 @@ tr.wk-section-last td {
   border-collapse: separate;
 }
 
-/* section首行上方加一点padding让圆角更好看 */
-tr.wk-section-first td { padding-top:clamp(6px,0.8vw,10px); }
-/* section末行下方加一点padding（border-bottom已负责段间间隙） */
-tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
+/* section首行/末行不再额外padding，统一间距 */
+tr.wk-section-first td { padding-top:0; }
+tr.wk-section-last td { padding-bottom:0; }
 
 /* ✦ 卡片核心样式 —— 固定高度确保代换课色块一致性 */
 .week-card {
@@ -1336,8 +1334,8 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   tr.wk-section-first td:last-child { border-top-right-radius:10px; }
   tr.wk-section-last td:first-child { border-bottom-left-radius:10px; }
   tr.wk-section-last td:last-child { border-bottom-right-radius:10px; }
-  tr.wk-section-first td { padding-top:5px; }
-  tr.wk-section-last td { padding-bottom:5px; }
+  tr.wk-section-first td { padding-top:0; }
+  tr.wk-section-last td { padding-bottom:0; }
   .weekly-grid thead tr th:first-child { border-top-left-radius:10px; }
   .weekly-grid thead tr th:last-child { border-top-right-radius:10px; }
 
@@ -1366,8 +1364,8 @@ tr.wk-section-last td { padding-bottom:clamp(6px,0.8vw,10px); }
   tr.wk-section-first td:last-child { border-top-right-radius:12px; }
   tr.wk-section-last td:first-child { border-bottom-left-radius:12px; }
   tr.wk-section-last td:last-child { border-bottom-right-radius:12px; }
-  tr.wk-section-first td { padding-top:8px; }
-  tr.wk-section-last td { padding-bottom:8px; }
+  tr.wk-section-first td { padding-top:0; }
+  tr.wk-section-last td { padding-bottom:0; }
   .weekly-grid thead tr th:first-child { border-top-left-radius:12px; }
   .weekly-grid thead tr th:last-child { border-top-right-radius:12px; }
 
@@ -5080,112 +5078,102 @@ function triggerDownload(){
 }
 function exportClassScheduleImage(){
   closeExportModal();
-  
-  var src=document.querySelector(".class-grid-wrapper");
-  if(!src){showImportStatus("未找到课程表","error");return;}
-  var wrap=document.createElement("div");wrap.style.cssText="position:fixed;top:-9999px;left:-9999px;width:720px;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;";
-  var tbl=src.querySelector("table");if(!tbl){showImportStatus("课程表为空","error");return;}
+  var cs=appData.classSchedule;
+  if(!cs||!cs.days){showImportStatus("无课程表数据","error");return;}
+  var days=cs.days;
+  var sections=getClassSectionItems();
+  var weekDates=getWeekDates(weeklyWeekOffset);
+  var subs=appData.substitutions||[];
+  var swps=appData.swaps||[];
   var exportTitle=appData.exportTitles&&appData.exportTitles.classSchedule?appData.exportTitles.classSchedule:"个人课程表";
+  var wrap=document.createElement("div");wrap.style.cssText="position:fixed;top:-9999px;left:-9999px;width:720px;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;";
   var title=document.createElement("div");title.style.cssText="font-size:32px;font-weight:400;color:#24324b;margin:0 0 18px;text-align:center;font-family:'PingFang SC','Microsoft YaHei',sans-serif;letter-spacing:4px;";title.textContent=exportTitle;
   wrap.appendChild(title);
-  var ctbl=tbl.cloneNode(true);
-  // Remove class-based styles that interfere with export inline styles
-  ctbl.className="";ctbl.removeAttribute("class");
-  ctbl.style.cssText="width:672px;border-collapse:separate;border-spacing:0;table-layout:fixed;margin:0 auto;background:#000;border:0.7px solid #000;border-radius:0;overflow:visible;box-shadow:none;";
-  // Count actual columns from the first row th elements
-  var allThs=ctbl.querySelectorAll("th");
-  var totalCols=allThs.length||6;
-  [].slice.call(allThs).forEach(function(th){
-    th.style.cssText="border:0.7px solid #000;padding:10px 6px;text-align:center;font-weight:700;font-size:16px;color:#000;background:#f8fafc;letter-spacing:4px;border-radius:0;";
-  });
-  [].slice.call(ctbl.querySelectorAll("th:first-child,td:first-child")).forEach(function(c){c.style.width="60px";c.style.borderRadius="0";});
-  [].slice.call(ctbl.querySelectorAll("th:last-child,td:last-child")).forEach(function(c){c.style.borderRadius="0";});
-  // Apply to all td first, but skip section-divider td (handled separately)
-  [].slice.call(ctbl.querySelectorAll("td")).forEach(function(td){
-    if(td.closest&&td.closest(".section-divider"))return; // skip if inside section-divider row
-    td.style.cssText="border:0.7px solid #000;padding:7px 4px;text-align:center;vertical-align:middle;height:52px;font-size:14px;line-height:1.4;color:#1f2937;background:#fff;letter-spacing:0;border-radius:0;";
-    if(td.className.indexOf("period-label")>=0||td.className.indexOf("period")>=0){td.style.fontSize="15px";td.style.fontWeight="600";td.style.letterSpacing="1px";}
-  });
-  // 上午/下午 分隔行：居中 + 适当字间距
-  [].slice.call(ctbl.querySelectorAll(".section-divider")).forEach(function(tr){
-    var td=tr.querySelector("td");
-    if(!td)return;
-    td.colSpan=totalCols;
-    var txt=td.textContent.trim();
-    td.style.cssText="border:0.7px solid #000;padding:8px 12px;text-align:center;font-size:16px;font-weight:700;color:#fff;background:#4E648A;border-radius:0;display:table-cell;vertical-align:middle;letter-spacing:"+(txt.length<=2?"6px":"2px")+";";
-  });
-  // 课程名（大字）+ 小字（括号内班级/教师）两行显示
-  [].slice.call(ctbl.querySelectorAll(".course-name")).forEach(function(el){
-    el.style.cssText="display:block;font-size:17px;font-weight:400;color:#000;letter-spacing:2px;line-height:1.3;";
-  });
-  [].slice.call(ctbl.querySelectorAll(".course-class")).forEach(function(el){
-    el.style.cssText="display:block;color:#666;font-size:13px;margin-top:2px;letter-spacing:1px;line-height:1.2;";
-  });
-  wrap.appendChild(ctbl);
-  wrap.style.paddingBottom="40px";
-  document.body.appendChild(wrap);
-  // Now that the clone is in the DOM, read computed styles for subject colors
-  [].slice.call(ctbl.querySelectorAll("td")).forEach(function(td){
-    var cls=td.className;
-    if(cls&&cls.indexOf("subject-")>=0){
-      var ps=window.getComputedStyle(td);
-      if(ps&&ps.backgroundColor&&ps.backgroundColor!=="rgba(0, 0, 0, 0)"&&ps.backgroundColor!=="transparent"){td.style.background=ps.backgroundColor;}
-      var psc=ps?window.getComputedStyle(td.querySelector(".course-name")):null;
-      if(psc&&psc.color&&psc.color!=="rgb(0, 0, 0)"){var cn=td.querySelector(".course-name");if(cn)cn.style.color=psc.color;}
+  var tbl=document.createElement("table");tbl.style.cssText="width:672px;border-collapse:separate;border-spacing:0;table-layout:fixed;margin:0 auto;background:#000;border:0.7px solid #000;border-radius:0;overflow:visible;box-shadow:none;";
+  var totalCols=days.length+1;
+  var thead=document.createElement("thead");var htr=document.createElement("tr");
+  var hth=document.createElement("th");hth.style.cssText="border:0.7px solid #000;padding:10px 6px;text-align:center;font-weight:700;font-size:16px;color:#000;background:#f8fafc;letter-spacing:4px;border-radius:0;";htr.appendChild(hth);
+  days.forEach(function(d){var th=document.createElement("th");th.style.cssText="border:0.7px solid #000;padding:10px 6px;text-align:center;font-weight:700;font-size:16px;color:#000;background:#f8fafc;letter-spacing:4px;border-radius:0;";th.textContent=d;htr.appendChild(th);});
+  thead.appendChild(htr);tbl.appendChild(thead);
+  var tbody=document.createElement("tbody");var globalIdx=0;
+  sections.forEach(function(sec){
+    if(sections.length>1){
+      var sdiv=document.createElement("tr");sdiv.className="section-divider";
+      var std=document.createElement("td");std.colSpan=totalCols;
+      var txt=sec.sectionName||"";
+      std.style.cssText="border:0.7px solid #000;padding:8px 12px;text-align:center;font-size:16px;font-weight:700;color:#fff;background:#4E648A;border-radius:0;display:table-cell;vertical-align:middle;letter-spacing:"+(txt.length<=2?"6px":"2px")+";";
+      std.textContent=txt;sdiv.appendChild(std);tbody.appendChild(sdiv);
     }
+    sec.items.forEach(function(it){
+      var tr=document.createElement("tr");var label=String(globalIdx+1);
+      var ptd=document.createElement("td");ptd.style.cssText="border:0.7px solid #000;padding:7px 4px;text-align:center;vertical-align:middle;height:52px;font-size:15px;font-weight:600;letter-spacing:1px;color:#1f2937;background:#fff;border-radius:0;width:60px;";ptd.textContent=label;tr.appendChild(ptd);
+      days.forEach(function(d){
+        var dateKey=weekDates[d];var cell=cs.grid[d]?cs.grid[d][it.id]:null;var displayCourse=cell||"";
+        var isSwappedOut=false,isSwappedIn=false,swappedInCourse="";
+        for(var si=0;si<swps.length;si++){var swp=swps[si];if(swp.date===dateKey&&swp.myPeriodItemId===it.id){isSwappedOut=true;break;}}
+        if(!isSwappedOut){for(var si2=0;si2<swps.length;si2++){var swp2=swps[si2];if((swp2.theirDate||swp2.date)===dateKey&&swp2.theirPeriodItemId===it.id){isSwappedIn=true;swappedInCourse=swp2.theirOriginal||"";break;}}}
+        if(isSwappedOut)displayCourse="";else if(isSwappedIn)displayCourse=swappedInCourse;
+        var isSub=false,subCourse="";for(var si3=0;si3<subs.length;si3++){if(subs[si3].date===dateKey&&subs[si3].periodItemId===it.id){isSub=true;subCourse=subs[si3].substituteClass||"";break;}}
+        var finalDisplay=isSub?subCourse:displayCourse;
+        var td=document.createElement("td");td.style.cssText="border:0.7px solid #000;padding:7px 4px;text-align:center;vertical-align:middle;height:52px;font-size:14px;line-height:1.4;color:#1f2937;background:#fff;letter-spacing:0;border-radius:0;position:relative;";
+        if(finalDisplay){
+          var parsed=parseCourseCell(finalDisplay);var bgColor=getSubjectColor(parsed.main);td.style.background=bgColor;
+          var dotStr="";
+          if(isSub)dotStr+='<span style="position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#e74c3c;z-index:1;pointer-events:none;"></span>';
+          if(isSwappedOut)dotStr+='<span style="position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#e74c3c;z-index:1;pointer-events:none;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;">×</span>';
+          else if(isSwappedIn)dotStr+='<span style="position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#f39c12;z-index:1;pointer-events:none;"></span>';
+          td.innerHTML=dotStr+'<span class="course-name" style="display:block;font-size:17px;font-weight:400;color:#000;letter-spacing:2px;line-height:1.3;">'+parsed.main+'</span>';
+          if(parsed.sub)td.innerHTML+='<span class="course-class" style="display:block;color:#666;font-size:13px;margin-top:2px;letter-spacing:1px;line-height:1.2;">（'+parsed.sub+'）</span>';
+        }else{td.innerHTML="";}
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);globalIdx++;
+    });
   });
+  tbl.appendChild(tbody);wrap.appendChild(tbl);wrap.style.paddingBottom="40px";document.body.appendChild(wrap);
   captureAndDownload(wrap,exportTitle);
 }
 function exportClassGroupScheduleImage(){
   closeExportModal();
-  
-  var src=document.querySelector("#classGroup .class-grid-wrapper");
-  if(!src){showImportStatus("未找到班级课表","error");return;}
-  var wrap=document.createElement("div");wrap.style.cssText="position:fixed;top:-9999px;left:-9999px;width:720px;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;";
-  var tbl=src.querySelector("table");if(!tbl){showImportStatus("班级课表为空","error");return;}
+  var cs=appData.classGroupSchedule;
+  if(!cs||!cs.days){showImportStatus("无班级课表数据","error");return;}
+  var days=cs.days;var sections=getClassSectionItems();
   var exportTitle=appData.exportTitles&&appData.exportTitles.classGroupSchedule?appData.exportTitles.classGroupSchedule:"一（2）班课程表";
+  var wrap=document.createElement("div");wrap.style.cssText="position:fixed;top:-9999px;left:-9999px;width:720px;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;";
   var title=document.createElement("div");title.style.cssText="font-size:32px;font-weight:400;color:#24324b;margin:0 0 18px;text-align:center;font-family:'PingFang SC','Microsoft YaHei',sans-serif;letter-spacing:4px;";title.textContent=exportTitle;
   wrap.appendChild(title);
-  var ctbl=tbl.cloneNode(true);
-  ctbl.className="";ctbl.removeAttribute("class");
-  ctbl.style.cssText="width:672px;border-collapse:separate;border-spacing:0;table-layout:fixed;margin:0 auto;background:#000;border:0.7px solid #000;border-radius:0;overflow:visible;box-shadow:none;";
-  var allThs=ctbl.querySelectorAll("th");
-  var totalCols=allThs.length||6;
-  [].slice.call(allThs).forEach(function(th){
-    th.style.cssText="border:0.7px solid #000;padding:10px 6px;text-align:center;font-weight:700;font-size:16px;color:#000;background:#f8fafc;letter-spacing:4px;border-radius:0;";
-  });
-  [].slice.call(ctbl.querySelectorAll("th:first-child,td:first-child")).forEach(function(c){c.style.width="60px";c.style.borderRadius="0";});
-  [].slice.call(ctbl.querySelectorAll("th:last-child,td:last-child")).forEach(function(c){c.style.borderRadius="0";});
-  [].slice.call(ctbl.querySelectorAll("td")).forEach(function(td){
-    if(td.closest&&td.closest(".section-divider"))return;
-    td.style.cssText="border:0.7px solid #000;padding:7px 4px;text-align:center;vertical-align:middle;height:52px;font-size:14px;line-height:1.4;color:#1f2937;background:#fff;letter-spacing:0;border-radius:0;";
-    if(td.className.indexOf("period-label")>=0||td.className.indexOf("period")>=0){td.style.fontSize="15px";td.style.fontWeight="600";td.style.letterSpacing="1px";}
-  });
-  [].slice.call(ctbl.querySelectorAll(".section-divider")).forEach(function(tr){
-    var td=tr.querySelector("td");
-    if(!td)return;
-    td.colSpan=totalCols;
-    var txt=td.textContent.trim();
-    td.style.cssText="border:0.7px solid #000;padding:8px 12px;text-align:center;font-size:16px;font-weight:700;color:#fff;background:#4E648A;border-radius:0;display:table-cell;vertical-align:middle;letter-spacing:"+(txt.length<=2?"6px":"2px")+";";
-  });
-  [].slice.call(ctbl.querySelectorAll(".course-name")).forEach(function(el){
-    el.style.cssText="display:block;font-size:17px;font-weight:400;color:#000;letter-spacing:2px;line-height:1.3;";
-  });
-  [].slice.call(ctbl.querySelectorAll(".course-class")).forEach(function(el){
-    el.style.cssText="display:block;color:#666;font-size:13px;margin-top:2px;letter-spacing:1px;line-height:1.2;";
-  });
-  wrap.appendChild(ctbl);
-  wrap.style.paddingBottom="40px";
-  document.body.appendChild(wrap);
-  [].slice.call(ctbl.querySelectorAll("td")).forEach(function(td){
-    var cls=td.className;
-    if(cls&&cls.indexOf("subject-")>=0){
-      var ps=window.getComputedStyle(td);
-      if(ps&&ps.backgroundColor&&ps.backgroundColor!=="rgba(0, 0, 0, 0)"&&ps.backgroundColor!=="transparent"){td.style.background=ps.backgroundColor;}
-      var psc=ps?window.getComputedStyle(td.querySelector(".course-name")):null;
-      if(psc&&psc.color&&psc.color!=="rgb(0, 0, 0)"){var cn=td.querySelector(".course-name");if(cn)cn.style.color=psc.color;}
+  var tbl=document.createElement("table");tbl.style.cssText="width:672px;border-collapse:separate;border-spacing:0;table-layout:fixed;margin:0 auto;background:#000;border:0.7px solid #000;border-radius:0;overflow:visible;box-shadow:none;";
+  var totalCols=days.length+1;
+  var thead=document.createElement("thead");var htr=document.createElement("tr");
+  var hth=document.createElement("th");hth.style.cssText="border:0.7px solid #000;padding:10px 6px;text-align:center;font-weight:700;font-size:16px;color:#000;background:#f8fafc;letter-spacing:4px;border-radius:0;";htr.appendChild(hth);
+  days.forEach(function(d){var th=document.createElement("th");th.style.cssText="border:0.7px solid #000;padding:10px 6px;text-align:center;font-weight:700;font-size:16px;color:#000;background:#f8fafc;letter-spacing:4px;border-radius:0;";th.textContent=d;htr.appendChild(th);});
+  thead.appendChild(htr);tbl.appendChild(thead);
+  var tbody=document.createElement("tbody");var globalIdx=0;
+  sections.forEach(function(sec){
+    if(sections.length>1){
+      var sdiv=document.createElement("tr");sdiv.className="section-divider";
+      var std=document.createElement("td");std.colSpan=totalCols;
+      var txt=sec.sectionName||"";
+      std.style.cssText="border:0.7px solid #000;padding:8px 12px;text-align:center;font-size:16px;font-weight:700;color:#fff;background:#4E648A;border-radius:0;display:table-cell;vertical-align:middle;letter-spacing:"+(txt.length<=2?"6px":"2px")+";";
+      std.textContent=txt;sdiv.appendChild(std);tbody.appendChild(sdiv);
     }
+    sec.items.forEach(function(it){
+      var tr=document.createElement("tr");var label=String(globalIdx+1);
+      var ptd=document.createElement("td");ptd.style.cssText="border:0.7px solid #000;padding:7px 4px;text-align:center;vertical-align:middle;height:52px;font-size:15px;font-weight:600;letter-spacing:1px;color:#1f2937;background:#fff;border-radius:0;width:60px;";ptd.textContent=label;tr.appendChild(ptd);
+      days.forEach(function(d){
+        var cell=cs.grid[d]?cs.grid[d][it.id]:null;var displayCourse=cell||"";
+        var td=document.createElement("td");td.style.cssText="border:0.7px solid #000;padding:7px 4px;text-align:center;vertical-align:middle;height:52px;font-size:14px;line-height:1.4;color:#1f2937;background:#fff;letter-spacing:0;border-radius:0;";
+        if(displayCourse){
+          var parsed=parseCourseCell(displayCourse);var bgColor=getSubjectColor(parsed.main);td.style.background=bgColor;
+          td.innerHTML='<span class="course-name" style="display:block;font-size:17px;font-weight:400;color:#000;letter-spacing:2px;line-height:1.3;">'+parsed.main+'</span>';
+          if(parsed.sub)td.innerHTML+='<span class="course-class" style="display:block;color:#666;font-size:13px;margin-top:2px;letter-spacing:1px;line-height:1.2;">（'+parsed.sub+'）</span>';
+        }else{td.innerHTML="";}
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);globalIdx++;
+    });
   });
+  tbl.appendChild(tbody);wrap.appendChild(tbl);wrap.style.paddingBottom="40px";document.body.appendChild(wrap);
   captureAndDownload(wrap,exportTitle);
 }
 function getExportSubjectClass(name){
